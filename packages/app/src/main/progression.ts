@@ -10,6 +10,7 @@ export interface ProgressionDeps {
   readonly config?: EarnConfig;
   readonly tickMs?: number;
   readonly onLevelUp?: (level: number) => void;
+  readonly onQuestDone?: (questId: string) => void;
 }
 
 export interface Progression {
@@ -39,10 +40,16 @@ export function startProgression(initial: PerchState, deps: ProgressionDeps): Pr
 
     const [idleMs, app] = await Promise.all([deps.activity.idleMs(), deps.activity.focusedApp()]);
 
-    const result = advanceState(state, { idleMs, app }, elapsed, now, config);
+    const result = advanceState(state, {
+      sample: { idleMs, app },
+      elapsedMs: elapsed,
+      nowMs: now,
+      earn: config,
+    });
     state = result.state;
 
     if (result.leveledTo !== null) deps.onLevelUp?.(result.leveledTo);
+    for (const quest of result.completedQuests) deps.onQuestDone?.(quest);
 
     await deps.storage.write(state);
   };

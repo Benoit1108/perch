@@ -179,15 +179,29 @@ n'existe pas encore et l'architecture en ports rend le remplacement local.
 s'exécute en millisecondes ; les écarts entre niveaux sont monotones croissants de 1 à 100 ;
 le state survit à un redémarrage et à une montée de version de schéma.
 
-### S4 — Quêtes et profils ⬅️ prochain
+### S4 — Quêtes et profils ✅ (moteur), sources restantes
 
 - Moteur de quêtes quotidiennes, 2-3 par jour, **plafonné** à ~200 XP/jour
 - Détection de profil au premier lancement, ajustable ensuite
 - Pool universel (concentration, pauses, diversité d'apps)
 - Sources : liste de tâches interne, dépôts git déclarés, pont `claude-pokemon` optionnel
 
-**Définition de fini** : un profil sans aucune source branchée atteint le même XP quotidien
-qu'un profil dev avec tout branché. C'est un test, pas une intention.
+**Définition de fini** : ✅ vérifiée à deux niveaux — sur le moteur de quêtes (30 jours
+consécutifs, profils nu et tout-branché à l'XP près) et de bout en bout sur `advanceState`
+(journée de 4 h simulée). L'équité est garantie **par construction** : même nombre de
+quêtes pour tous, plafond réparti à parts égales. Brancher une source ne peut pas faire
+gagner davantage, seulement changer ce qu'on fait pour y arriver.
+
+**Reste à faire dans ce sprint** — le moteur est complet et branché, les _sources_
+spécialisées ne le sont pas encore :
+
+- source git (commits du jour dans les dépôts déclarés) — le signal existe, personne ne
+  l'alimente
+- liste de tâches interne — demande une fenêtre de réglages, qui arrive en S5
+- pont `claude-pokemon` optionnel
+
+Sans elles, un profil `dev` reçoit ses quêtes de développement mais ne peut pas les
+valider. C'est visible et assumé, pas silencieux.
 
 ### S5 — Personnalité
 

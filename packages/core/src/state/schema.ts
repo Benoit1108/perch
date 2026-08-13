@@ -16,6 +16,16 @@ const DailyActivitySchema = z.object({
   activeMs: z.number().nonnegative(),
   focusApp: z.string().nullable(),
   focusMs: z.number().nonnegative(),
+  // Champs ajoutes en S4 : `default` plutot qu'`optional`, pour que les etats ecrits
+  // avant leur existence se relisent avec une valeur exploitable.
+  apps: z.array(z.string()).readonly().default([]),
+  breaks: z.number().nonnegative().default(0),
+  idleRunMs: z.number().nonnegative().default(0),
+});
+
+const QuestStateSchema = z.object({
+  dayKey: z.string().min(1),
+  claimed: z.array(z.string()).readonly().default([]),
 });
 
 const CreatureStateSchema = z.object({
@@ -32,6 +42,12 @@ const PerchStateSchema = z.object({
   createdAt: z.number().int().nonnegative(),
   creature: CreatureStateSchema,
   day: DailyActivitySchema.optional(),
+  quests: QuestStateSchema.optional(),
+  /** Profils actifs. Vide = universel seul, ce qui reste un jeu complet (I4). */
+  profiles: z
+    .array(z.enum(['universel', 'dev', 'taches']))
+    .readonly()
+    .default([]),
 });
 
 export type PerchState = z.infer<typeof PerchStateSchema>;
@@ -42,6 +58,7 @@ export function createInitialState(clock: ClockPort, packId: string, lineId: str
     schemaVersion: STATE_SCHEMA_VERSION,
     createdAt: clock.now(),
     creature: { packId, lineId, level: 1, xp: 0 },
+    profiles: [],
   };
 }
 

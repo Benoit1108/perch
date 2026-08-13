@@ -12,6 +12,7 @@ const etatInitial: PerchState = {
   schemaVersion: 1,
   createdAt: T0,
   creature: { packId: 'test-pack', lineId: 'brindille', level: 1, xp: 0 },
+  profiles: [],
 };
 
 function horlogePilotee(): ClockPort & { avance(ms: number): void } {

@@ -1,3 +1,4 @@
+import type { QuestSignals } from '../quests/catalog.js';
 /**
  * Le socle d'expérience : la part identique pour tout le monde.
  *
@@ -38,7 +39,16 @@ export interface DailyActivity {
   readonly activeMs: number;
   readonly focusApp: string | null;
   readonly focusMs: number;
+  /** Applications distinctes vues aujourd'hui. Alimente une quête universelle. */
+  readonly apps: readonly string[];
+  /** Pauses achevées d'au moins `breakAfterMs`. */
+  readonly breaks: number;
+  /** Inactivité continue en cours. Devient une pause quand l'activité reprend. */
+  readonly idleRunMs: number;
 }
+
+/** Durée d'inactivité au-delà de laquelle une absence compte comme une vraie pause. */
+export const BREAK_AFTER_MS = 5 * 60_000;
 
 export interface ActivitySample {
   readonly idleMs: number;
@@ -51,7 +61,21 @@ export function dayKeyOf(nowMs: number): string {
 }
 
 export function emptyDay(dayKey: string): DailyActivity {
-  return { dayKey, activeMs: 0, focusApp: null, focusMs: 0 };
+  return {
+    dayKey,
+    activeMs: 0,
+    focusApp: null,
+    focusMs: 0,
+    apps: [],
+    breaks: 0,
+    idleRunMs: 0,
+  };
+}
+
+/** Ajoute une application à la liste du jour, sans doublon et sans muter l'entrée. */
+function withApp(apps: readonly string[], app: string | null): readonly string[] {
+  if (app === null || apps.includes(app)) return apps;
+  return [...apps, app];
 }
 
 export interface EarnResult {
@@ -78,9 +102,22 @@ export function accumulate(
   const base = day.dayKey === today ? day : emptyDay(today);
 
   if (elapsedMs <= 0 || sample.idleMs >= config.idleThresholdMs) {
-    // Inactif : le temps ne compte pas, et la concentration est rompue.
-    return { day: { ...base, focusApp: null, focusMs: 0 }, xp: 0 };
+    // Inactif : le temps ne compte pas, la concentration est rompue, et l'absence
+    // s'accumule — elle deviendra une pause si l'activité reprend.
+    return {
+      day: {
+        ...base,
+        focusApp: null,
+        focusMs: 0,
+        idleRunMs: base.idleRunMs + Math.max(elapsedMs, 0),
+      },
+      xp: 0,
+    };
   }
+
+  // L'activité reprend : une absence assez longue compte pour une pause. On la crédite au
+  // RETOUR et non pendant l'absence — sinon une machine abandonnée accumulerait des pauses.
+  const breaks = base.idleRunMs >= BREAK_AFTER_MS ? base.breaks + 1 : base.breaks;
 
   const sameApp = sample.app !== null && sample.app === base.focusApp;
   const priorFocusMs = sameApp ? base.focusMs : 0;
@@ -106,7 +143,25 @@ export function accumulate(
       activeMs: base.activeMs + elapsedMs,
       focusApp: sample.app,
       focusMs,
+      apps: withApp(base.apps, sample.app),
+      breaks,
+      idleRunMs: 0,
     },
     xp,
+  };
+}
+
+/** Traduit les compteurs du jour en signaux de quêtes, complétés par les sources externes. */
+export function signalsFrom(
+  day: DailyActivity,
+  external: { readonly commits: number; readonly tasksDone: number }
+): QuestSignals {
+  return {
+    activeMs: day.activeMs,
+    focusMs: day.focusMs,
+    distinctApps: day.apps.length,
+    breaks: day.breaks,
+    commits: external.commits,
+    tasksDone: external.tasksDone,
   };
 }

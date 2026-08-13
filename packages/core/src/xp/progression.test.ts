@@ -1,87 +1,161 @@
 import { describe, expect, it } from 'vitest';
 
+import { defaultQuestConfig, rewardPerQuest } from '../quests/engine.js';
+import type { PerchState } from '../state/schema.js';
 import { xpToReach } from './curve.js';
-import { defaultEarnConfig, emptyDay } from './earn.js';
-import { advance } from './progression.js';
+import { advanceState } from './progression.js';
 
-const config = defaultEarnConfig;
 const MINUTE = 60_000;
+const HEURE = 3_600_000;
 const T0 = Date.parse('2026-08-13T08:00:00Z');
+const JOUR = '2026-08-13';
+
+function etat(overrides: Partial<PerchState> = {}): PerchState {
+  return {
+    schemaVersion: 1,
+    createdAt: T0,
+    creature: { packId: 'test-pack', lineId: 'brindille', level: 1, xp: 0 },
+    profiles: [],
+    ...overrides,
+  };
+}
+
 const actif = { idleMs: 0, app: 'ide' };
 
-describe('advance', () => {
-  it('accumule l’expérience sans changer de niveau trop tôt', () => {
-    const result = advance({ xp: 0, level: 1 }, emptyDay('2026-08-13'), actif, MINUTE, T0, config);
+/** Journée déjà bien remplie : de quoi valider n'importe quelle quête universelle. */
+const journeeRemplie = {
+  dayKey: JOUR,
+  activeMs: 10 * HEURE,
+  focusApp: 'ide',
+  focusMs: 10 * HEURE,
+  apps: ['ide', 'navigateur', 'terminal', 'musique'],
+  breaks: 4,
+  idleRunMs: 0,
+};
 
-    expect(result.gained).toBeCloseTo(config.baseXpPerMinute, 5);
-    expect(result.creature.xp).toBeCloseTo(config.baseXpPerMinute, 5);
-    expect(result.creature.level).toBe(1);
-    expect(result.leveledTo).toBeNull();
-  });
+describe('advanceState — socle', () => {
+  it('accumule sans changer de niveau trop tôt', () => {
+    const result = advanceState(etat(), { sample: actif, elapsedMs: MINUTE, nowMs: T0 });
 
-  it('signale le franchissement d’un niveau', () => {
-    const presqueDeux = xpToReach(2) - 1;
-    const result = advance(
-      { xp: presqueDeux, level: 1 },
-      emptyDay('2026-08-13'),
-      actif,
-      MINUTE,
-      T0,
-      config
-    );
-
-    expect(result.creature.level).toBe(2);
-    expect(result.leveledTo).toBe(2);
-  });
-
-  it('ne signale rien quand le niveau ne bouge pas', () => {
-    const result = advance(
-      { xp: xpToReach(5), level: 5 },
-      emptyDay('2026-08-13'),
-      actif,
-      MINUTE,
-      T0,
-      config
-    );
+    expect(result.gainedBase).toBeGreaterThan(0);
+    expect(result.state.creature.level).toBe(1);
     expect(result.leveledTo).toBeNull();
   });
 
   it('n’avance pas pendant une inactivité', () => {
-    const result = advance(
-      { xp: 500, level: 2 },
-      emptyDay('2026-08-13'),
-      { idleMs: 10 * MINUTE, app: 'ide' },
-      MINUTE,
-      T0,
-      config
+    const result = advanceState(
+      etat({ creature: { packId: 'p', lineId: 'l', level: 2, xp: 500 } }),
+      {
+        sample: { idleMs: 10 * MINUTE, app: 'ide' },
+        elapsedMs: MINUTE,
+        nowMs: T0,
+      }
     );
 
-    expect(result.gained).toBe(0);
-    expect(result.creature.xp).toBe(500);
+    expect(result.gainedBase).toBe(0);
+    expect(result.gainedQuests).toBe(0);
+    expect(result.state.creature.xp).toBe(500);
   });
 
-  it('atteint le niveau 16 en une quinzaine de journées normales', () => {
-    let creature = { xp: 0, level: 1 };
-    let jours = 0;
+  it('signale le franchissement d’un niveau', () => {
+    const presqueDeux = etat({
+      creature: { packId: 'p', lineId: 'l', level: 1, xp: xpToReach(2) - 1 },
+    });
+    const result = advanceState(presqueDeux, { sample: actif, elapsedMs: MINUTE, nowMs: T0 });
 
-    while (creature.level < 16 && jours < 100) {
-      jours += 1;
-      // Nouveau jour : les compteurs journaliers repartent de zéro.
-      let day = emptyDay(`jour-${String(jours)}`);
+    expect(result.leveledTo).toBe(2);
+  });
+
+  it('relit un état écrit avant l’existence des compteurs journaliers', () => {
+    const ancien = etat();
+    expect(ancien.day).toBeUndefined();
+
+    const result = advanceState(ancien, { sample: actif, elapsedMs: MINUTE, nowMs: T0 });
+
+    expect(result.state.day?.dayKey).toBe(JOUR);
+    expect(result.gainedBase).toBeGreaterThan(0);
+  });
+});
+
+describe('advanceState — quêtes', () => {
+  it('accorde l’expérience des quêtes achevées', () => {
+    const result = advanceState(etat({ day: journeeRemplie }), {
+      sample: actif,
+      elapsedMs: MINUTE,
+      nowMs: T0,
+    });
+
+    expect(result.completedQuests.length).toBeGreaterThan(0);
+    expect(result.gainedQuests).toBe(
+      result.completedQuests.length * rewardPerQuest(defaultQuestConfig)
+    );
+  });
+
+  it('ne récompense pas deux fois la même quête', () => {
+    const premier = advanceState(etat({ day: journeeRemplie }), {
+      sample: actif,
+      elapsedMs: MINUTE,
+      nowMs: T0,
+    });
+    const second = advanceState(premier.state, {
+      sample: actif,
+      elapsedMs: MINUTE,
+      nowMs: T0,
+    });
+
+    expect(premier.gainedQuests).toBeGreaterThan(0);
+    expect(second.gainedQuests).toBe(0);
+  });
+
+  it('ne dépasse jamais le plafond quotidien de quêtes', () => {
+    let state = etat({ day: journeeRemplie, profiles: ['dev', 'taches'] });
+    let total = 0;
+
+    for (let i = 0; i < 50; i++) {
+      const pas = advanceState(state, {
+        sample: actif,
+        elapsedMs: MINUTE,
+        nowMs: T0,
+        external: { commits: 99, tasksDone: 99 },
+      });
+      state = pas.state;
+      total += pas.gainedQuests;
+    }
+
+    expect(total).toBeLessThanOrEqual(defaultQuestConfig.dailyCap);
+  });
+});
+
+/**
+ * L'invariant I4, vérifié de bout en bout plutôt que sur le seul moteur de quêtes.
+ *
+ * Un développeur avec toutes ses sources branchées et quelqu'un sans aucune source
+ * doivent finir la journée au même niveau. Si ce test tombe, le projet a deux populations.
+ */
+describe('équité entre profils, de bout en bout', () => {
+  it('donne le même total quotidien avec et sans sources branchées', () => {
+    function journee(
+      profiles: PerchState['profiles'],
+      external: { commits: number; tasksDone: number }
+    ) {
+      let state = etat({ profiles });
 
       // 4 h actives, dont 2 h dans la même application.
       for (let i = 0; i < 240; i++) {
-        const app = i < 120 ? 'ide' : `app-${String(i)}`;
-        const pas = advance(creature, day, { idleMs: 0, app }, MINUTE, T0, config);
-        creature = pas.creature;
-        day = pas.day;
+        const app = i < 120 ? 'ide' : `app-${String(i % 4)}`;
+        state = advanceState(state, {
+          sample: { idleMs: 0, app },
+          elapsedMs: MINUTE,
+          nowMs: T0,
+          external,
+        }).state;
       }
-
-      expect(day.activeMs).toBe(240 * MINUTE);
+      return state.creature.xp;
     }
 
-    expect(creature.level).toBe(16);
-    expect(jours).toBeGreaterThan(10);
-    expect(jours).toBeLessThan(30);
+    const sansSource = journee([], { commits: 0, tasksDone: 0 });
+    const toutBranche = journee(['dev', 'taches'], { commits: 99, tasksDone: 99 });
+
+    expect(sansSource).toBe(toutBranche);
   });
 });

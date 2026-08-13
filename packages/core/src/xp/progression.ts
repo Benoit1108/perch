@@ -1,79 +1,80 @@
+import type { QuestConfig, QuestView } from '../quests/engine.js';
+import { defaultQuestConfig, emptyQuests, evaluateQuests } from '../quests/engine.js';
 import type { PerchState } from '../state/schema.js';
 import { progressFor } from './curve.js';
-import type { ActivitySample, DailyActivity, EarnConfig } from './earn.js';
-import { accumulate, dayKeyOf, emptyDay } from './earn.js';
+import type { ActivitySample, EarnConfig } from './earn.js';
+import { accumulate, dayKeyOf, defaultEarnConfig, emptyDay, signalsFrom } from './earn.js';
 
-export interface CreatureProgress {
-  readonly xp: number;
-  readonly level: number;
+export interface ExternalSignals {
+  readonly commits: number;
+  readonly tasksDone: number;
 }
 
-export interface AdvanceResult {
-  readonly creature: CreatureProgress;
-  readonly day: DailyActivity;
-  /** Gain de ce pas, pour l'affichage. */
-  readonly gained: number;
-  /** Niveau franchi pendant ce pas, `null` sinon. Sert à déclencher une réaction. */
-  readonly leveledTo: number | null;
-}
+export const noExternalSignals: ExternalSignals = { commits: 0, tasksDone: 0 };
 
-/**
- * Fait avancer la créature d'un pas.
- *
- * Point de jonction entre le socle d'expérience et la courbe de niveaux. Séparer les deux
- * n'est pas de la décoration : la courbe se rééquilibre sans toucher au calcul du temps
- * actif, et le socle se règle sans risquer de casser la monotonie des paliers.
- */
-export function advance(
-  creature: CreatureProgress,
-  day: DailyActivity,
-  sample: ActivitySample,
-  elapsedMs: number,
-  nowMs: number,
-  config: EarnConfig
-): AdvanceResult {
-  const earned = accumulate(day, sample, elapsedMs, nowMs, config);
-  const xp = creature.xp + earned.xp;
-  const level = progressFor(xp).level;
-
-  return {
-    creature: { xp, level },
-    day: earned.day,
-    gained: earned.xp,
-    leveledTo: level > creature.level ? level : null,
-  };
+export interface AdvanceInput {
+  readonly sample: ActivitySample;
+  readonly elapsedMs: number;
+  readonly nowMs: number;
+  /** Apportés par les sources branchées. Absents = profil sans source, ce qui est complet. */
+  readonly external?: ExternalSignals;
+  readonly earn?: EarnConfig;
+  readonly quests?: QuestConfig;
 }
 
 export interface StateAdvance {
   readonly state: PerchState;
-  readonly gained: number;
+  /** Expérience du socle sur ce pas. */
+  readonly gainedBase: number;
+  /** Expérience issue de quêtes achevées à ce pas. Plafonnée par jour. */
+  readonly gainedQuests: number;
   readonly leveledTo: number | null;
+  readonly quests: readonly QuestView[];
+  readonly completedQuests: readonly string[];
 }
 
 /**
- * Même chose, appliqué à l'état complet.
+ * Fait avancer la créature d'un pas : socle, puis quêtes.
  *
- * Les états écrits avant S3 n'ont pas de compteurs journaliers : on en fabrique un vide
- * plutôt que de refuser l'état. Personne ne doit perdre sa créature parce qu'une mise à
- * jour a ajouté un champ.
+ * INVARIANT I4 — les deux apports sont calculés séparément et le second est plafonné.
+ * Brancher une source ne peut donc jamais faire gagner davantage : elle change seulement
+ * ce qu'on fait pour remplir les mêmes quêtes.
+ *
+ * Les états écrits avant l'existence de ces compteurs sont acceptés tels quels : personne
+ * ne doit perdre sa créature parce qu'une mise à jour a ajouté un champ.
  */
-export function advanceState(
-  state: PerchState,
-  sample: ActivitySample,
-  elapsedMs: number,
-  nowMs: number,
-  config: EarnConfig
-): StateAdvance {
-  const day = state.day ?? emptyDay(dayKeyOf(nowMs));
-  const result = advance(state.creature, day, sample, elapsedMs, nowMs, config);
+export function advanceState(state: PerchState, input: AdvanceInput): StateAdvance {
+  const earnConfig = input.earn ?? defaultEarnConfig;
+  const questConfig = input.quests ?? defaultQuestConfig;
+  const external = input.external ?? noExternalSignals;
+
+  const day = state.day ?? emptyDay(dayKeyOf(input.nowMs));
+  const earned = accumulate(day, input.sample, input.elapsedMs, input.nowMs, earnConfig);
+
+  const { dayKey } = earned.day;
+  const questState = state.quests ?? emptyQuests(dayKey);
+  const outcome = evaluateQuests(
+    dayKey,
+    state.profiles,
+    signalsFrom(earned.day, external),
+    questState,
+    questConfig
+  );
+
+  const xp = state.creature.xp + earned.xp + outcome.xp;
+  const level = progressFor(xp).level;
 
   return {
     state: {
       ...state,
-      creature: { ...state.creature, xp: result.creature.xp, level: result.creature.level },
-      day: result.day,
+      creature: { ...state.creature, xp, level },
+      day: earned.day,
+      quests: outcome.state,
     },
-    gained: result.gained,
-    leveledTo: result.leveledTo,
+    gainedBase: earned.xp,
+    gainedQuests: outcome.xp,
+    leveledTo: level > state.creature.level ? level : null,
+    quests: outcome.quests,
+    completedQuests: outcome.completed,
   };
 }

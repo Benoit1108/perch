@@ -97,10 +97,12 @@ describe('accumulate — rendements décroissants et jours', () => {
 
   it('remet les compteurs à zéro au changement de jour', () => {
     const hier: DailyActivity = {
-      dayKey: '2026-08-12',
+      ...emptyDay('2026-08-12'),
       activeMs: 5 * 3_600_000,
       focusApp: 'ide',
       focusMs: 9e6,
+      apps: ['ide', 'navigateur'],
+      breaks: 3,
     };
     const { day, xp } = accumulate(hier, actif('ide'), MINUTE, T0, config);
 
