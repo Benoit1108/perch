@@ -77,7 +77,7 @@ Chaque sprint a un **objectif** (la question à laquelle il répond), des **livr
 et une **définition de fini** vérifiable. Un sprint n'est fini que quand sa DoD passe
 **et** que la checklist « 10/10 » de [docs/QUALITY.md](docs/QUALITY.md) est cochée.
 
-### S0 — Spike technique ⬅️ prochain
+### S0 — Spike technique ✅
 
 **Objectif** : prouver que GNOME Shell 50.1 sur Wayland se comporte comme prévu, **avant**
 d'investir dans l'outillage et le moteur. C'est le sprint le plus risqué du projet, donc le premier.
@@ -113,7 +113,7 @@ de la souris — sur X11 et Windows le repli reste complet.
 Mesure (`check-tracking.sh`, souris en mouvement) : 1 position distincte en 10 s sans
 overlay, 2 avec — dont `(0,0)`, signature Wayland d'une position globale inconnue.
 
-### S1 — Fondations
+### S1 — Fondations ✅
 
 **Objectif** : que tout ce qui devient chronophage plus tard existe avant la première
 ligne de logique métier. C'est ici qu'on met en place les conditions du 10/10.
@@ -131,12 +131,21 @@ ligne de logique métier. C'est ici qu'on met en place les conditions du 10/10.
 - Un pack de créatures **de test** à deux entrées, pour ne pas dépendre du pack réel dans les tests
 - Sécurité Electron : isolation de contexte, sandbox, IPC validé zod
 
+**État au 2026-08-13 — terminé.** `npm run health` passe (code 0) : format, lint, types,
+36 modules sans violation d'architecture, knip propre, 44 tests, 96,9 % de statements et
+100 % de branches. `npm run verify:guardrails` confirme que les cinq violations types sont
+bien rejetées.
+
+Deux imprévus consignés : `typescript-eslint` interdit TypeScript 7, et un binaire natif
+tronqué au téléchargement (`@rolldown/binding`) faisait crasher vitest et knip en `SIGBUS`
+— piège difficile à diagnostiquer, noté dans `CLAUDE.md`.
+
 **Définition de fini** : `npm run health` passe sur un dépôt encore quasi vide **et**
 une violation introduite volontairement (un `import` de `electron` dans `core`, un
 fichier de 220 lignes, un `any`) fait bien échouer la CI. Un garde-fou qu'on n'a pas
 vu échouer n'est pas un garde-fou.
 
-### S2 — Le corps
+### S2 — Le corps ⬅️ prochain
 
 **Objectif** : un pet qui se déplace de façon crédible, sans encore rien comprendre au jeu.
 
