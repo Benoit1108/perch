@@ -35,6 +35,9 @@ const IFACE_XML = `
     <method name="GetMonitors">
       <arg type="a(iiii)" direction="out" name="monitors"/>
     </method>
+    <method name="GetFocusedApp">
+      <arg type="s" direction="out" name="app"/>
+    </method>
   </interface>
 </node>`;
 
@@ -89,6 +92,24 @@ class SensorsService {
     }
 
     return out;
+  }
+
+  /**
+   * Classe WM de l'application au premier plan, pour le bonus de concentration.
+   *
+   * INVARIANT I1 — on renvoie un identifiant d'application, jamais un titre de fenêtre.
+   * Un titre expose le contenu (nom de fichier, sujet de courriel, page consultée) ;
+   * la classe WM ne dit que « un navigateur », « un éditeur ». Cette donnée ne quitte
+   * jamais la machine.
+   */
+  GetFocusedApp(): string {
+    try {
+      const focused = global.display.get_focus_window();
+      return focused === null ? '' : (focused.get_wm_class() ?? '');
+    } catch (error: unknown) {
+      report(error, 'perch: GetFocusedApp');
+      return '';
+    }
   }
 
   /** Géométrie de chaque écran : c'est elle qui définit les zones vides du bureau. */

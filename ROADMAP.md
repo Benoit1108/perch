@@ -145,7 +145,7 @@ une violation introduite volontairement (un `import` de `electron` dans `core`, 
 fichier de 220 lignes, un `any`) fait bien échouer la CI. Un garde-fou qu'on n'a pas
 vu échouer n'est pas un garde-fou.
 
-### S2 — Le corps ⬅️ prochain
+### S2 — Le corps ✅
 
 **Objectif** : un pet qui se déplace de façon crédible, sans encore rien comprendre au jeu.
 
@@ -165,7 +165,7 @@ vu échouer n'est pas un garde-fou.
 jugé intenable, S2 est le dernier moment pas trop cher pour changer de corps — `core`
 n'existe pas encore et l'architecture en ports rend le remplacement local.
 
-### S3 — Le cerveau
+### S3 — Le cerveau ✅
 
 **Objectif** : le pet progresse.
 
@@ -179,7 +179,7 @@ n'existe pas encore et l'architecture en ports rend le remplacement local.
 s'exécute en millisecondes ; les écarts entre niveaux sont monotones croissants de 1 à 100 ;
 le state survit à un redémarrage et à une montée de version de schéma.
 
-### S4 — Quêtes et profils
+### S4 — Quêtes et profils ⬅️ prochain
 
 - Moteur de quêtes quotidiennes, 2-3 par jour, **plafonné** à ~200 XP/jour
 - Détection de profil au premier lancement, ajustable ensuite

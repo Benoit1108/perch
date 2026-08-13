@@ -24,6 +24,13 @@ export { createInitialState, readState } from './state/schema.js';
 export type { Surface } from './world/surfaces.js';
 export { boundingBox, buildSurfaces } from './world/surfaces.js';
 
+export type { ActivityPort } from './ports/activity.js';
+
+export type { EarnConfig } from './xp/earn.js';
+export { defaultEarnConfig } from './xp/earn.js';
+export { progressFor } from './xp/curve.js';
+export { advanceState } from './xp/progression.js';
+
 export type { MotionConfig, Pet } from './motion/pet.js';
 export { defaultMotionConfig } from './motion/pet.js';
 export { step } from './motion/machine.js';

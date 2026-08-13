@@ -9,6 +9,22 @@ adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 
 ### Added
 
+- **Sprint S3 — Le cerveau.** La créature progresse. Courbe de niveaux à trois segments
+  (ratios 1,15 / 1,06 / 1,02 appliqués aux **écarts**, pas au cumul), socle d'expérience
+  fondé sur le temps réellement actif, et persistance à chaque minute.
+- Socle d'XP : 3 XP/minute active, ×1,5 après 20 minutes continues dans la même
+  application, rendements décroissants au-delà de 6 h actives par jour. Une journée de
+  4 h dont 2 h de concentration rapporte ~870 XP, soit le niveau 16 en une quinzaine de
+  jours et le niveau 36 en quatre mois.
+- `org.gnome.Mutter.IdleMonitor` comme source d'activité — interface de GNOME, pas de
+  notre extension : **la progression fonctionne même en mode dégradé**.
+- `GetFocusedApp` dans l'extension : classe WM uniquement, jamais un titre de fenêtre —
+  un titre exposerait le contenu consulté (invariant I1).
+- Le temps écoulé est borné à deux ticks : sans cela, une machine réveillée après huit
+  heures de veille encaisserait une nuit entière d'expérience.
+- **Sprint S2 — Le corps.** Surfaces marchables, pesanteur, machine à états, overlay
+  transparent et capteurs GNOME.
+
 - **Sprint S1 — Fondations.** Monorepo à trois paquets (`core`, `app`, `shell`) en ports
   et adaptateurs, avec tout l'outillage de qualité posé avant la première ligne de logique
   métier.

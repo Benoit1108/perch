@@ -7,20 +7,31 @@ import type { ClockPort } from '../ports/clock.js';
  * Règle de compatibilité : on AJOUTE des champs avec une valeur par défaut, on n'en
  * retire jamais. Un état écrit par une version antérieure doit toujours pouvoir être
  * relu — un utilisateur ne doit jamais perdre sa créature à cause d'une mise à jour.
+ * C'est pourquoi `day` est optionnel : les états écrits avant S3 n'en ont pas.
  */
 export const STATE_SCHEMA_VERSION = 1;
+
+const DailyActivitySchema = z.object({
+  dayKey: z.string().min(1),
+  activeMs: z.number().nonnegative(),
+  focusApp: z.string().nullable(),
+  focusMs: z.number().nonnegative(),
+});
 
 const CreatureStateSchema = z.object({
   packId: z.string().min(1),
   lineId: z.string().min(1),
   level: z.number().int().min(1).max(100),
-  xp: z.number().int().nonnegative(),
+  // Fractionnaire : l'expérience s'accumule par pas d'une minute, et l'arrondi n'a lieu
+  // qu'à l'affichage. Arrondir à chaque pas perdrait une fraction à chaque tick.
+  xp: z.number().nonnegative(),
 });
 
 const PerchStateSchema = z.object({
   schemaVersion: z.literal(STATE_SCHEMA_VERSION),
   createdAt: z.number().int().nonnegative(),
   creature: CreatureStateSchema,
+  day: DailyActivitySchema.optional(),
 });
 
 export type PerchState = z.infer<typeof PerchStateSchema>;

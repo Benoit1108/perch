@@ -1,15 +1,19 @@
 import { app, screen } from 'electron';
 import { fileURLToPath } from 'node:url';
 
+import { detectActivity } from '../activity/detect.js';
 import { systemClock } from '../adapters/clock.js';
 import { createFileStorage } from '../adapters/storage.js';
 import { Overlay } from '../overlay/window.js';
 import { defaultsFrom, discoverPacks } from '../packs/discover.js';
 import { detectSensors } from '../sensors/detect.js';
 import { nullSensors } from '../sensors/null.js';
+import { progressFor } from '@perch/core';
+
 import { bootstrap } from './bootstrap.js';
 import { installEscapeHatches } from './escape-hatches.js';
 import { startLoop } from './loop.js';
+import { startProgression } from './progression.js';
 
 /**
  * Point d'entrée du process principal.
@@ -33,8 +37,9 @@ async function main(): Promise<void> {
   }
 
   const statePath = `${app.getPath('userData')}/state.json`;
+  const storage = createFileStorage(statePath);
   const { state, recovery } = await bootstrap(
-    { clock: systemClock, storage: createFileStorage(statePath), sensors: nullSensors },
+    { clock: systemClock, storage, sensors: nullSensors },
     defaults
   );
 
@@ -50,6 +55,15 @@ async function main(): Promise<void> {
     monitors: () => screen.getAllDisplays().map((display) => display.bounds),
   });
 
+  const progression = startProgression(state, {
+    clock: systemClock,
+    activity: await detectActivity(),
+    storage,
+    onLevelUp: (level) => {
+      console.log(`[perch] niveau ${String(level)} !`);
+    },
+  });
+
   const stop = startLoop({
     overlay,
     sensors,
@@ -58,11 +72,16 @@ async function main(): Promise<void> {
 
   app.on('will-quit', () => {
     stop();
+    progression.stop();
     overlay.destroy();
+    // Dernière écriture : sans elle, jusqu'à une minute d'expérience se perd à la fermeture.
+    void storage.write(progression.current());
   });
 
+  const progress = progressFor(state.creature.xp);
   console.log(
-    `[perch] ${state.creature.lineId} niveau ${String(state.creature.level)}, ` +
+    `[perch] ${state.creature.lineId} niveau ${String(progress.level)} — ` +
+      `${String(Math.round(progress.inLevel))}/${progress.toNext === null ? '∞' : String(progress.toNext)} XP, ` +
       `capteurs « ${sensors.name} »`
   );
 }
