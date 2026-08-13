@@ -3,10 +3,14 @@
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist",
-    "module": "ES2022",
-    "moduleResolution": "bundler",
+    // `nodenext` et NON `bundler` : il n'y a pas de bundler ici. Avec `bundler`, tsc
+    // accepte `import './helper'` sans extension et recopie le spécifiateur tel quel dans
+    // la sortie — GJS ne sait pas le résoudre et l'extension lève au chargement, dans le
+    // processus du compositeur. `nodenext` impose le suffixe `.js`.
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     // Aucun type ambiant automatique : l'extension tourne sous GJS, pas sous Node.
-    // Les déclarations nécessaires sont référencées explicitement dans src/gnome.d.ts.
+    // Les déclarations nécessaires sont référencées dans src/gnome.d.ts.
     "types": []
   },
   "include": ["src/**/*.ts"]

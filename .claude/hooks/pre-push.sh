@@ -23,7 +23,11 @@ if ! echo "$COMMAND" | grep -qE '(^|[[:space:]&|;])git[[:space:]]+push([[:space:
   exit 0
 fi
 
-if echo "$COMMAND" | grep -qE '(--no-verify|--dry-run)'; then
+# On ne cherche le contournement QU'APRÈS le `git push`, et comme argument entier.
+# Une recherche sur toute la commande laissait passer
+# `git commit -m "doc: parler de --dry-run" && git push`.
+PUSH_ARGS="${COMMAND#*git push}"
+if echo "$PUSH_ARGS" | grep -qE '(^|[[:space:]])--(no-verify|dry-run)([[:space:]]|$)'; then
   exit 0
 fi
 

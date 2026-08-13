@@ -10,9 +10,12 @@ module.exports = {
     {
       name: 'a1-core-ignore-le-reste',
       severity: 'error',
-      comment: 'A1 — `core` ne connaît ni le corps ni le compositeur.',
+      comment:
+        'A1 — `core` ne connaît ni le corps ni le compositeur. Les DEUX écritures sont ' +
+        'couvertes : le chemin relatif et le nom de paquet (`@perch/app`), qui se résout ' +
+        'via un lien symbolique dans node_modules et échappait au motif de chemin.',
       from: { path: '^packages/core/' },
-      to: { path: '^packages/(app|shell)/' },
+      to: { path: '(^packages/(app|shell)/|^@perch/(app|shell)$)' },
     },
     {
       name: 'a2-core-sans-plateforme',
@@ -37,7 +40,7 @@ module.exports = {
         "A3 — l'extension GNOME tourne dans le compositeur et ne partage aucun code : " +
         'son seul contrat avec le reste du monde est son interface D-Bus.',
       from: { path: '^packages/shell/' },
-      to: { path: '^packages/(core|app)/' },
+      to: { path: '(^packages/(core|app)/|^@perch/(core|app)$)' },
     },
     {
       name: 'a4-renderer-et-main-separes',
@@ -63,11 +66,13 @@ module.exports = {
       to: { circular: true },
     },
     {
-      name: 'a6-ports-types-seulement',
+      name: 'a6-ports-sans-dependance',
       severity: 'error',
       comment:
-        'A6 — `core/ports` ne contient que des types. Rien à importer, donc rien à ' +
-        'importer depuis ailleurs — pas même zod.',
+        'A6 (moitié sortante) — `core/ports` ne dépend de rien, pas même de zod. ' +
+        "ATTENTION : cette règle n'interdit PAS d'y déposer une implémentation — " +
+        'dependency-cruiser ne raisonne que sur les dépendances. Le versant « types ' +
+        'seulement » est tenu par `no-restricted-syntax` dans eslint.config.js.',
       from: { path: '^packages/core/src/ports/' },
       to: { pathNot: '^packages/core/src/ports/' },
     },
@@ -84,7 +89,7 @@ module.exports = {
     doNotFollow: { path: 'node_modules' },
     exclude: { path: '(^|/)(dist|coverage|spike)/' },
     tsPreCompilationDeps: true,
-    tsConfig: { fileName: 'tsconfig.base.json' },
+    tsConfig: { fileName: 'tsconfig.depcruise.json' },
     enhancedResolveOptions: {
       extensions: ['.ts', '.js', '.json'],
       conditionNames: ['import', 'require', 'node', 'default', 'types'],

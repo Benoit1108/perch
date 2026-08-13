@@ -103,15 +103,15 @@ son interface D-Bus, dont le schéma est validé côté `app`.
 
 Traduites en règles `dependency-cruiser` :
 
-| #   | Règle                                                            | Sévérité      |
-| --- | ---------------------------------------------------------------- | ------------- |
-| A1  | `core` n'importe rien de `app` ni de `shell`                     | erreur        |
-| A2  | `core` n'importe aucun module système ni `electron`              | erreur        |
-| A3  | `shell` n'importe ni `core` ni `app`                             | erreur        |
-| A4  | `app/renderer` n'importe pas `app/main`, et réciproquement       | erreur        |
-| A5  | Aucun cycle de dépendances, nulle part                           | erreur        |
-| A6  | `core/ports` ne contient que des types, aucune implémentation    | erreur        |
-| A7  | Aucun module orphelin (non atteignable depuis un point d'entrée) | avertissement |
+| #   | Règle                                                                                                         | Sévérité      |
+| --- | ------------------------------------------------------------------------------------------------------------- | ------------- |
+| A1  | `core` n'importe rien de `app` ni de `shell`                                                                  | erreur        |
+| A2  | `core` n'importe aucun module système ni `electron`                                                           | erreur        |
+| A3  | `shell` n'importe ni `core` ni `app`                                                                          | erreur        |
+| A4  | `app/renderer` n'importe pas `app/main`, et réciproquement                                                    | erreur        |
+| A5  | Aucun cycle de dépendances, nulle part                                                                        | erreur        |
+| A6  | `core/ports` ne dépend de rien (dependency-cruiser) **et** n'y déclare aucune valeur (`no-restricted-syntax`) | erreur        |
+| A7  | Aucun module orphelin (non atteignable depuis un point d'entrée)                                              | avertissement |
 
 ---
 

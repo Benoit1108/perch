@@ -1,0 +1,19 @@
+{
+  // Configuration utilisée UNIQUEMENT par dependency-cruiser.
+  //
+  // Sans elle, `import { … } from '@perch/core'` se résout vers `packages/core/dist/…`,
+  // qui est exclu de l'analyse : l'arête disparaissait du graphe et les règles A1 et A3
+  // étaient aveugles à la forme d'import la plus naturelle. Ces alias font pointer la
+  // résolution vers les sources, qui sont bien dans le graphe.
+  //
+  // Le build réel n'utilise pas ce fichier : il passe par les références de projets.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@perch/core": ["packages/core/src/index.ts"],
+      "@perch/app": ["packages/app/src/main/index.ts"],
+      "@perch/shell": ["packages/shell/src/extension.ts"]
+    }
+  }
+}

@@ -9,6 +9,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Aucun job n'a besoin d'écrire quoi que ce soit sur le dépôt.
+permissions:
+  contents: read
+
 jobs:
   health:
     name: Portes de qualité
@@ -55,6 +59,27 @@ jobs:
       # Une règle mal ciblée laisse `health` au vert tout en ne protégeant plus rien.
       - name: Vérification des garde-fous
         run: npm run verify:guardrails
+
+  commits:
+    name: Convention de commit
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # Sans ce job, commitlint était installé, configuré… et invoqué nulle part :
+      # « Conventional Commits vérifiés » n'était qu'une intention.
+      - name: commitlint
+        run: npx commitlint --from "${{ github.event.pull_request.base.sha }}" --to HEAD --verbose
 
   audit:
     name: Vulnérabilités

@@ -12,6 +12,11 @@ import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
  * Elle est indispensable sur Wayland : mesuré en S0, laisser passer les clics coupe la
  * seule source de position du curseur dont dispose XWayland (spike/README.md, 7 ter).
  * `global.get_pointer()` interroge le compositeur, qui connaît toujours la vraie position.
+ *
+ * Chaque méthode exposée est enveloppée dans un `try/catch` : GJS convertirait bien une
+ * exception en erreur D-Bus, mais on préfère rendre une réponse dégradée exploitable
+ * plutôt que de faire échouer l'appel — et le commentaire ci-dessus doit correspondre au
+ * code, pas exprimer une intention.
  */
 
 const BUS_NAME = 'org.perch.Sensors';
@@ -35,11 +40,29 @@ const IFACE_XML = `
 
 type RectTuple = [number, number, number, number];
 
+/**
+ * `logError` de GJS attend un objet. Une valeur levée peut être n'importe quoi, et
+ * c'est précisément dans ce cas de bord qu'on ne veut pas d'une seconde exception —
+ * celle-ci partirait depuis le processus du compositeur.
+ */
+function report(error: unknown, context: string): void {
+  if (typeof error === 'object' && error !== null) {
+    logError(error, context);
+  } else {
+    log(`${context}: ${String(error)}`);
+  }
+}
+
 class SensorsService {
-  /** Position globale du curseur. */
+  /** Position globale du curseur. `[0, 0]` si le compositeur ne répond pas. */
   GetPointer(): [number, number] {
-    const [x, y] = global.get_pointer();
-    return [x, y];
+    try {
+      const [x, y] = global.get_pointer();
+      return [x, y];
+    } catch (error: unknown) {
+      report(error, 'perch: GetPointer');
+      return [0, 0];
+    }
   }
 
   /**
@@ -51,14 +74,18 @@ class SensorsService {
   GetWindows(): RectTuple[] {
     const out: RectTuple[] = [];
 
-    for (const actor of global.get_window_actors()) {
-      const win = actor.meta_window;
-      if (win === null) continue;
-      if (win.get_window_type() !== Meta.WindowType.NORMAL) continue;
-      if (win.minimized) continue;
+    try {
+      for (const actor of global.get_window_actors()) {
+        const win = actor.meta_window;
+        if (win === null) continue;
+        if (win.get_window_type() !== Meta.WindowType.NORMAL) continue;
+        if (win.minimized) continue;
 
-      const r = win.get_frame_rect();
-      out.push([r.x, r.y, r.width, r.height]);
+        const r = win.get_frame_rect();
+        out.push([r.x, r.y, r.width, r.height]);
+      }
+    } catch (error: unknown) {
+      report(error, 'perch: GetWindows');
     }
 
     return out;
@@ -67,11 +94,15 @@ class SensorsService {
   /** Géométrie de chaque écran : c'est elle qui définit les zones vides du bureau. */
   GetMonitors(): RectTuple[] {
     const out: RectTuple[] = [];
-    const count = global.display.get_n_monitors();
 
-    for (let i = 0; i < count; i++) {
-      const r = global.display.get_monitor_geometry(i);
-      out.push([r.x, r.y, r.width, r.height]);
+    try {
+      const count = global.display.get_n_monitors();
+      for (let i = 0; i < count; i++) {
+        const r = global.display.get_monitor_geometry(i);
+        out.push([r.x, r.y, r.width, r.height]);
+      }
+    } catch (error: unknown) {
+      report(error, 'perch: GetMonitors');
     }
 
     return out;

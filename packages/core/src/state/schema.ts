@@ -10,20 +10,19 @@ import type { ClockPort } from '../ports/clock.js';
  */
 export const STATE_SCHEMA_VERSION = 1;
 
-export const CreatureStateSchema = z.object({
+const CreatureStateSchema = z.object({
   packId: z.string().min(1),
   lineId: z.string().min(1),
   level: z.number().int().min(1).max(100),
   xp: z.number().int().nonnegative(),
 });
 
-export const PerchStateSchema = z.object({
+const PerchStateSchema = z.object({
   schemaVersion: z.literal(STATE_SCHEMA_VERSION),
   createdAt: z.number().int().nonnegative(),
   creature: CreatureStateSchema,
 });
 
-export type CreatureState = z.infer<typeof CreatureStateSchema>;
 export type PerchState = z.infer<typeof PerchStateSchema>;
 
 /** État d'une créature qui vient d'éclore. */

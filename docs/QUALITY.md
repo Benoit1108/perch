@@ -17,12 +17,12 @@ Voir aussi : [ARCHITECTURE.md](ARCHITECTURE.md) (contrat de dépendances), [../R
 | **Couches et dépendances** | **dependency-cruiser**                                                        |
 | Tests unitaires            | Vitest                                                                        |
 | Couverture                 | Vitest + v8, seuils bloquants                                                 |
-| Tests e2e                  | Playwright (support Electron natif)                                           |
+| Tests e2e                  | Playwright — **prévu en S2**, quand il y aura une fenêtre à piloter           |
 | Mises à jour               | Dependabot                                                                    |
 | Convention de commit       | commitlint + Conventional Commits                                             |
 | Code mort                  | Knip                                                                          |
 | Validation à l'exécution   | zod                                                                           |
-| Durcissement               | `@electron/fuses`                                                             |
+| Durcissement               | `@electron/fuses` — **prévu en S7**, au moment du packaging                   |
 
 `dependency-cruiser` est l'outil qui compte le plus dans ce tableau : c'est le seul qui
 empêche l'architecture de se dissoudre au fil des sprints. Les règles qu'il applique sont
@@ -63,9 +63,9 @@ il ne coûte rien et attrape une classe entière de bugs.
 | `max-lines-per-function` (60)                   | corollaire du précédent                   |
 | `complexity` (12)                               | garde-fou sur la complexité cyclomatique  |
 
-**Sur l'interdiction de `as`** : `as const` reste légitime et devra probablement être
-autorisé explicitement — à confirmer au moment du réglage, le comportement de la règle
-dépend de sa version. Pour le reste, l'échappatoire n'est pas de désactiver la règle mais
+**Sur l'interdiction de `as`** : la question est tranchée. `assertionStyle: 'never'`
+laisse passer `as const` et rejette `brut as number` — aucune exception n'est nécessaire.
+L'échappatoire n'est donc pas de désactiver la règle mais
 d'écrire un `// eslint-disable-next-line` **avec une justification en commentaire**. Une
 exception visible en revue vaut infiniment mieux qu'une exception invisible : si le projet
 en accumule, c'est un signal, pas un détail.
@@ -111,7 +111,10 @@ Elle enchaîne, dans cet ordre, en s'arrêtant à la première erreur :
 4. `deps` — dependency-cruiser, règles A1 à A7
 5. `dead` — Knip, ni fichier ni export ni dépendance inutilisés
 6. `test` — Vitest avec les seuils de couverture
-7. `e2e` — Playwright (hors `--quick`)
+
+Les tests e2e n'y figurent pas encore : il n'y a rien à piloter avant la fenêtre de S2.
+`npm run verify:guardrails` tourne à part, en CI — il est lent et ne concerne que les
+changements de configuration.
 
 ### Hook pre-push
 
@@ -121,8 +124,9 @@ casse `npm ci` dans un workspace en CI.
 
 ### Intégration continue
 
-Les mêmes étapes en GitHub Actions, plus : `npm audit`, un build de paquet sur les deux
-OS, et Dependabot en hebdomadaire.
+Les mêmes étapes en GitHub Actions, plus : la vérification des garde-fous, `npm audit`,
+commitlint sur les commits d'une PR, et Dependabot en hebdomadaire. Le build sur les deux
+systèmes viendra en S7, quand il y aura un paquet à produire.
 
 ---
 

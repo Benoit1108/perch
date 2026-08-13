@@ -5,11 +5,25 @@
   // Il est conservé pour ses constats, pas pour être maintenu.
   "ignore": ["spike/**"],
 
+  // Les trois paquets sont privés : rien n'est publié, donc un export que personne
+  // n'importe est du code mort, y compris dans un fichier d'entrée. Sans cette option,
+  // `packages/core/src/index.ts` peut accumuler des réexports inutilisés sans un mot,
+  // alors que docs/QUALITY.md promet « ni fichier ni export ni dépendance inutilisés ».
+  "includeEntryExports": true,
+
+  // Un export consommé dans son propre module n'est pas mort : il est simplement aussi
+  // exposé. Le signaler pousserait à casser la lisibilité pour satisfaire l'outil.
+  "ignoreExportsUsedInFile": true,
+
   "workspaces": {
     "packages/shell": {
       // GNOME charge l'extension via son `metadata.json`, que knip ne sait pas lire :
       // sans cette déclaration, le point d'entrée passe pour un fichier mort.
       "entry": ["src/extension.ts"],
+
+      // L'export par défaut est instancié par le compositeur, jamais par notre code :
+      // le compter comme inutilisé serait un faux positif.
+      "includeEntryExports": false,
 
       // GJS résout lui-même `gi://Gio` et `resource:///org/gnome/shell/...`. Ce ne sont
       // pas des paquets npm : knip les prend pour des dépendances manquantes.

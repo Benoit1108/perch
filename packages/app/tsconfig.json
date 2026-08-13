@@ -2,8 +2,10 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "dist",
-    "lib": ["ES2023", "DOM"]
+    "outDir": "dist"
+    // Pas de `lib: DOM` ici : le process principal n'a ni `document` ni `window`, et les
+    // avoir en portée invite à écrire du code qui compile puis explose à l'exécution.
+    // Le renderer aura son propre tsconfig quand il arrivera, en S2.
   },
   "include": ["src/**/*.ts"],
   "references": [{ "path": "../core" }]

@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "description": "Extension GNOME Shell : capteurs uniquement, exposes sur D-Bus.",
+  "scripts": {
+    "build": "tsc --build && node ./scripts/copy-metadata.mjs"
+  },
   "devDependencies": {
     "@girs/gio-2.0": "^4.1.0",
     "@girs/gnome-shell": "^50.0.4",

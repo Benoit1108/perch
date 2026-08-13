@@ -1,33 +1,25 @@
+/**
+ * Surface publique de `core`.
+ *
+ * Elle est volontairement limitée à ce qui est RÉELLEMENT consommé aujourd'hui. Un baril
+ * qui réexporte par anticipation est du code mort en attente : knip le signale, et c'est
+ * voulu. Chaque sprint ajoute ici ce dont il a besoin, au moment où il en a besoin.
+ *
+ * Le reste (`stageForLevel`, `findLine`, `ActivityPort`…) existe et est testé dans son
+ * module ; seule son exposition attend son premier consommateur.
+ */
+
 export type {
-  ActivityPort,
   ClockPort,
   Point,
   Rect,
-  SensorCapabilities,
   SensorPort,
   StoragePort,
+  StorageRead,
 } from './ports/index.js';
 
-export {
-  CreatureLineSchema,
-  CreaturePackSchema,
-  CreatureStageSchema,
-} from './creatures/manifest.js';
-export type { CreatureLine, CreaturePack, CreatureStage } from './creatures/manifest.js';
+export type { CreaturePack } from './creatures/manifest.js';
+export { parseCreaturePack } from './creatures/pack.js';
 
-export {
-  InvalidPackError,
-  findLine,
-  nextEvolutionLevel,
-  parseCreaturePack,
-  stageForLevel,
-} from './creatures/pack.js';
-
-export {
-  CreatureStateSchema,
-  PerchStateSchema,
-  STATE_SCHEMA_VERSION,
-  createInitialState,
-  readState,
-} from './state/schema.js';
-export type { CreatureState, PerchState } from './state/schema.js';
+export type { PerchState } from './state/schema.js';
+export { createInitialState, readState } from './state/schema.js';

@@ -16,7 +16,7 @@ const identifier = z
   .min(1)
   .regex(/^[a-z0-9-]+$/u, 'identifiant en minuscules, chiffres et tirets uniquement');
 
-export const CreatureStageSchema = z.object({
+const CreatureStageSchema = z.object({
   id: identifier,
   name: z.string().min(1),
   /** Chemin du sprite, relatif au dossier du pack. Jamais committé (invariant I5). */
@@ -25,7 +25,7 @@ export const CreatureStageSchema = z.object({
   fromLevel: z.number().int().min(1).max(100),
 });
 
-export const CreatureLineSchema = z.object({
+const CreatureLineSchema = z.object({
   id: identifier,
   stages: z.array(CreatureStageSchema).min(1),
 });

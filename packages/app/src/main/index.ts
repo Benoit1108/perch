@@ -1,8 +1,9 @@
 import { app } from 'electron';
-import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { systemClock } from '../adapters/clock.js';
 import { createFileStorage } from '../adapters/storage.js';
+import { defaultsFrom, discoverPacks } from '../packs/discover.js';
 import { nullSensors } from '../sensors/null.js';
 import { bootstrap } from './bootstrap.js';
 
@@ -20,14 +21,26 @@ import { bootstrap } from './bootstrap.js';
 async function main(): Promise<void> {
   await app.whenReady();
 
-  const statePath = join(app.getPath('userData'), 'state.json');
-  const { state, recovered } = await bootstrap(
+  const packsRoot = fileURLToPath(new URL('../../../../packs', import.meta.url));
+  const defaults = defaultsFrom(await discoverPacks(packsRoot));
+
+  if (defaults === null) {
+    console.error(`[perch] aucun pack de creatures utilisable dans ${packsRoot}`);
+    app.exit(1);
+    return;
+  }
+
+  const statePath = `${app.getPath('userData')}/state.json`;
+  const { state, recovery } = await bootstrap(
     { clock: systemClock, storage: createFileStorage(statePath), sensors: nullSensors },
-    { packId: 'test-pack', lineId: 'brindille' }
+    defaults
   );
 
-  if (recovered) {
-    console.warn('[perch] etat precedent illisible, redemarrage a neuf');
+  if (recovery.kind === 'recovered') {
+    console.warn(
+      `[perch] etat precedent illisible (${recovery.reason}) — redemarrage a neuf.` +
+        (recovery.archivedAt === null ? '' : ` Ancien fichier conserve : ${recovery.archivedAt}`)
+    );
   }
 
   console.log(
