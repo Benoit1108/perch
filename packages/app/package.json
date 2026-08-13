@@ -5,6 +5,9 @@
   "type": "module",
   "description": "Le corps : rendu Electron, physique, adaptateurs de capteurs.",
   "main": "./dist/main/index.js",
+  "scripts": {
+    "start": "electron . --ozone-platform=x11"
+  },
   "dependencies": {
     "@perch/core": "*"
   },
