@@ -25,7 +25,14 @@ export default defineConfig([
         projectService: {
           // Pas de `**` ici : typescript-eslint le refuse, pour éviter qu'un glob trop
           // large rattache tout le dépôt au projet implicite.
-          allowDefaultProject: ['*.ts', '*.js', '*.cjs', 'packages/shell/scripts/*.mjs'],
+          allowDefaultProject: [
+            '*.ts',
+            '*.js',
+            '*.cjs',
+            'scripts/*.mjs',
+            'packages/shell/scripts/*.mjs',
+            'packages/app/scripts/*.mjs',
+          ],
         },
       },
     },

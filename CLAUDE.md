@@ -87,8 +87,14 @@ tenable : après un `parse`, le type est garanti à l'exécution.
   `webContents.capturePage()`.
 - **Electron est épinglé en `^42.7.0`** : à partir de 43.2.0, `setIgnoreMouseEvents` ne
   réduit plus la région d'entrée (electron#52456).
-- **Un overlay plein écran naît avec ses sorties de secours** : raccourci global, arrêt
-  automatique, PID affiché. Seul l'arrêt automatique protège quand la souris est captée.
+- **`globalShortcut.register()` renvoie `true` sous Wayland et ne fonctionne PAS.** Le
+  compositeur route le clavier ; une application XWayland ne peut pas capter de raccourci
+  global. Même famille de mensonge qu'`isVisible()`. La sortie de secours fiable est le
+  fichier PID + `npm run stop`, qui ne dépend ni du clavier, ni de la souris, ni du
+  compositeur.
+- **Un overlay plein écran naît avec ses sorties de secours.** L'arrêt automatique est
+  actif par défaut en `PERCH_DEBUG=1` : si les clics traversants cassent, c'est le seul
+  recours qui ne dépende de rien.
 
 ### Outillage
 

@@ -41,6 +41,9 @@ npm run health     # format, lint, types, architecture, code mort, tests
 | `npm run dead`              | Fichiers, exports et dépendances inutilisés (knip) |
 | `npm test`                  | Vitest avec seuils de couverture                   |
 | `npm run verify:guardrails` | Vérifie que les garde-fous rejettent encore        |
+| `npm start`                 | Lance le compagnon                                 |
+| `npm run stop`              | L'arrête (fichier PID — ne dépend pas du clavier)  |
+| `npm run setup:sandbox`     | Corrige les permissions d'Electron, une seule fois |
 
 ## Structure
 
