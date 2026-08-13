@@ -1,3 +1,5 @@
+import type { Evidence } from '../quests/evidence.js';
+import { deriveProfiles, mergeCommits, noEvidence } from '../quests/evidence.js';
 import type { QuestConfig, QuestView } from '../quests/engine.js';
 import { defaultQuestConfig, emptyQuests, evaluateQuests } from '../quests/engine.js';
 import type { PerchState } from '../state/schema.js';
@@ -5,19 +7,16 @@ import { progressFor } from './curve.js';
 import type { ActivitySample, EarnConfig } from './earn.js';
 import { accumulate, dayKeyOf, defaultEarnConfig, emptyDay, signalsFrom } from './earn.js';
 
-export interface ExternalSignals {
-  readonly commits: number;
-  readonly tasksDone: number;
-}
-
-export const noExternalSignals: ExternalSignals = { commits: 0, tasksDone: 0 };
-
 export interface AdvanceInput {
   readonly sample: ActivitySample;
   readonly elapsedMs: number;
   readonly nowMs: number;
-  /** Apportés par les sources branchées. Absents = profil sans source, ce qui est complet. */
-  readonly external?: ExternalSignals;
+  /** Ce que l'installation sait mesurer. Détermine les profils, donc les quêtes tirées. */
+  readonly evidence?: Evidence;
+  /** Hachages des commits relevés à cet instant. Fusionnés avec ceux déjà comptés. */
+  readonly observedCommits?: readonly string[];
+  /** Tâches achevées aujourd'hui, quand la liste interne existe. */
+  readonly tasksDone?: number;
   readonly earn?: EarnConfig;
   readonly quests?: QuestConfig;
 }
@@ -46,17 +45,22 @@ export interface StateAdvance {
 export function advanceState(state: PerchState, input: AdvanceInput): StateAdvance {
   const earnConfig = input.earn ?? defaultEarnConfig;
   const questConfig = input.quests ?? defaultQuestConfig;
-  const external = input.external ?? noExternalSignals;
+  const evidence: Evidence = input.evidence ?? noEvidence;
 
   const day = state.day ?? emptyDay(dayKeyOf(input.nowMs));
   const earned = accumulate(day, input.sample, input.elapsedMs, input.nowMs, earnConfig);
 
   const { dayKey } = earned.day;
+  const git = mergeCommits(state.git, dayKey, input.observedCommits ?? []);
   const questState = state.quests ?? emptyQuests(dayKey);
+
   const outcome = evaluateQuests(
     dayKey,
-    state.profiles,
-    signalsFrom(earned.day, external),
+    deriveProfiles(evidence),
+    signalsFrom(earned.day, {
+      commits: git.hashes.length,
+      tasksDone: input.tasksDone ?? 0,
+    }),
     questState,
     questConfig
   );
@@ -70,6 +74,7 @@ export function advanceState(state: PerchState, input: AdvanceInput): StateAdvan
       creature: { ...state.creature, xp, level },
       day: earned.day,
       quests: outcome.state,
+      git,
     },
     gainedBase: earned.xp,
     gainedQuests: outcome.xp,

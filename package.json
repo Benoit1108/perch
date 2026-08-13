@@ -23,6 +23,7 @@
     "verify:guardrails": "bash scripts/verify-guardrails.sh",
     "setup:sandbox": "bash scripts/fix-sandbox.sh",
     "stop": "node scripts/stop.mjs",
+    "watch": "node scripts/watch.mjs",
     "start": "npm run typecheck && npm start --workspace @perch/app",
     "health": "npm run format:check && npm run lint && npm run typecheck && npm run deps && npm run dead && npm run test",
     "clean": "tsc --build --clean"

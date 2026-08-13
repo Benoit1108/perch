@@ -43,12 +43,20 @@ const PerchStateSchema = z.object({
   creature: CreatureStateSchema,
   day: DailyActivitySchema.optional(),
   quests: QuestStateSchema.optional(),
-  /** Profils actifs. Vide = universel seul, ce qui reste un jeu complet (I4). */
-  profiles: z
-    .array(z.enum(['universel', 'dev', 'taches']))
-    .readonly()
-    .default([]),
+  // Commits distincts comptés aujourd'hui. Mémorisés pour qu'une réécriture d'historique
+  // ne fasse pas recompter le travail du matin.
+  git: z
+    .object({
+      dayKey: z.string().min(1),
+      hashes: z.array(z.string()).readonly().default([]),
+    })
+    .optional(),
 });
+
+// Les profils NE sont PAS stockés : ils se déduisent de ce qu'on sait mesurer, via
+// `deriveProfiles`. Une case à cocher permettrait d'activer des quêtes qu'aucune source
+// ne peut valider — elles resteraient à zéro pour toujours et priveraient le joueur d'un
+// tiers de sa journée.
 
 export type PerchState = z.infer<typeof PerchStateSchema>;
 
@@ -58,7 +66,6 @@ export function createInitialState(clock: ClockPort, packId: string, lineId: str
     schemaVersion: STATE_SCHEMA_VERSION,
     createdAt: clock.now(),
     creature: { packId, lineId, level: 1, xp: 0 },
-    profiles: [],
   };
 }
 

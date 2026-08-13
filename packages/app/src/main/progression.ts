@@ -1,5 +1,25 @@
-import type { ActivityPort, ClockPort, EarnConfig, PerchState, StoragePort } from '@perch/core';
-import { advanceState, defaultEarnConfig } from '@perch/core';
+import type {
+  ActivityPort,
+  ClockPort,
+  EarnConfig,
+  Evidence,
+  PerchState,
+  StoragePort,
+} from '@perch/core';
+import { advanceState, defaultEarnConfig, noEvidence } from '@perch/core';
+
+/** Ce que les sources branchées savent rapporter à un instant donné. */
+export interface SourceSnapshot {
+  readonly evidence: Evidence;
+  readonly observedCommits: readonly string[];
+  readonly tasksDone: number;
+}
+
+export const noSources: SourceSnapshot = {
+  evidence: noEvidence,
+  observedCommits: [],
+  tasksDone: 0,
+};
 
 const DEFAULT_TICK_MS = 60_000;
 
@@ -11,6 +31,8 @@ export interface ProgressionDeps {
   readonly tickMs?: number;
   readonly onLevelUp?: (level: number) => void;
   readonly onQuestDone?: (questId: string) => void;
+  /** Relevé des sources spécialisées. Absent = profil universel seul, jeu complet. */
+  readonly sources?: () => Promise<SourceSnapshot>;
 }
 
 export interface Progression {
@@ -38,13 +60,20 @@ export function startProgression(initial: PerchState, deps: ProgressionDeps): Pr
     const elapsed = Math.min(Math.max(now - lastAt, 0), tickMs * 2);
     lastAt = now;
 
-    const [idleMs, app] = await Promise.all([deps.activity.idleMs(), deps.activity.focusedApp()]);
+    const [idleMs, app, sources] = await Promise.all([
+      deps.activity.idleMs(),
+      deps.activity.focusedApp(),
+      deps.sources?.() ?? Promise.resolve(noSources),
+    ]);
 
     const result = advanceState(state, {
       sample: { idleMs, app },
       elapsedMs: elapsed,
       nowMs: now,
       earn: config,
+      evidence: sources.evidence,
+      observedCommits: sources.observedCommits,
+      tasksDone: sources.tasksDone,
     });
     state = result.state;
 

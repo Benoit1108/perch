@@ -30,6 +30,8 @@ export type { EarnConfig } from './xp/earn.js';
 export { defaultEarnConfig } from './xp/earn.js';
 export { progressFor } from './xp/curve.js';
 export { advanceState } from './xp/progression.js';
+export type { Evidence } from './quests/evidence.js';
+export { noEvidence } from './quests/evidence.js';
 
 export type { MotionConfig, Pet } from './motion/pet.js';
 export { defaultMotionConfig } from './motion/pet.js';

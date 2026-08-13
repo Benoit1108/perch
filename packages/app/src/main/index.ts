@@ -2,6 +2,7 @@ import { app, screen } from 'electron';
 import { fileURLToPath } from 'node:url';
 
 import { detectActivity } from '../activity/detect.js';
+import { snapshotSources } from '../sources/snapshot.js';
 import { systemClock } from '../adapters/clock.js';
 import { createFileStorage } from '../adapters/storage.js';
 import { Overlay } from '../overlay/window.js';
@@ -59,8 +60,12 @@ async function main(): Promise<void> {
     clock: systemClock,
     activity: await detectActivity(),
     storage,
+    sources: snapshotSources,
     onLevelUp: (level) => {
       console.log(`[perch] niveau ${String(level)} !`);
+    },
+    onQuestDone: (questId) => {
+      console.log(`[perch] quete accomplie : ${questId}`);
     },
   });
 

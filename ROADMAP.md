@@ -179,7 +179,7 @@ n'existe pas encore et l'architecture en ports rend le remplacement local.
 s'exécute en millisecondes ; les écarts entre niveaux sont monotones croissants de 1 à 100 ;
 le state survit à un redémarrage et à une montée de version de schéma.
 
-### S4 — Quêtes et profils ✅ (moteur), sources restantes
+### S4 — Quêtes et profils ✅
 
 - Moteur de quêtes quotidiennes, 2-3 par jour, **plafonné** à ~200 XP/jour
 - Détection de profil au premier lancement, ajustable ensuite

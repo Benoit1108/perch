@@ -9,6 +9,18 @@ adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 
 ### Added
 
+- **Sprint S4 — Quêtes et profils.** Équité garantie par construction : même nombre de
+  quêtes pour tous, plafond quotidien réparti à parts égales. Brancher une source ne peut
+  pas faire gagner davantage, seulement changer ce qu'on fait pour y arriver.
+- Source git via `npm run watch`, lancé depuis l'intérieur d'un dépôt. Aucune racine
+  devinée, aucun scan du système de fichiers.
+- Comptage honnête des commits : hachages uniquement — jamais un message, qui dirait _sur
+  quoi_ on travaille là où le hachage dit seulement _que_ l'on a travaillé —, filtré sur
+  l'adresse git du dépôt, et dédoublonné pour qu'un `rebase` ne fasse pas recompter la
+  matinée.
+- Profils déduits des preuves plutôt que cochés : une quête qu'aucune source ne sait
+  mesurer n'est jamais proposée.
+
 - **Sprint S3 — Le cerveau.** La créature progresse. Courbe de niveaux à trois segments
   (ratios 1,15 / 1,06 / 1,02 appliqués aux **écarts**, pas au cumul), socle d'expérience
   fondé sur le temps réellement actif, et persistance à chaque minute.

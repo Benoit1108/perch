@@ -15,7 +15,6 @@ function etat(overrides: Partial<PerchState> = {}): PerchState {
     schemaVersion: 1,
     createdAt: T0,
     creature: { packId: 'test-pack', lineId: 'brindille', level: 1, xp: 0 },
-    profiles: [],
     ...overrides,
   };
 }
@@ -108,7 +107,7 @@ describe('advanceState — quêtes', () => {
   });
 
   it('ne dépasse jamais le plafond quotidien de quêtes', () => {
-    let state = etat({ day: journeeRemplie, profiles: ['dev', 'taches'] });
+    let state = etat({ day: journeeRemplie });
     let total = 0;
 
     for (let i = 0; i < 50; i++) {
@@ -116,7 +115,9 @@ describe('advanceState — quêtes', () => {
         sample: actif,
         elapsedMs: MINUTE,
         nowMs: T0,
-        external: { commits: 99, tasksDone: 99 },
+        evidence: { watchedRepos: 1, tasks: 1 },
+        observedCommits: [`c${String(i)}`],
+        tasksDone: 99,
       });
       state = pas.state;
       total += pas.gainedQuests;
@@ -134,11 +135,8 @@ describe('advanceState — quêtes', () => {
  */
 describe('équité entre profils, de bout en bout', () => {
   it('donne le même total quotidien avec et sans sources branchées', () => {
-    function journee(
-      profiles: PerchState['profiles'],
-      external: { commits: number; tasksDone: number }
-    ) {
-      let state = etat({ profiles });
+    function journee(evidence: { watchedRepos: number; tasks: number }) {
+      let state = etat();
 
       // 4 h actives, dont 2 h dans la même application.
       for (let i = 0; i < 240; i++) {
@@ -147,14 +145,16 @@ describe('équité entre profils, de bout en bout', () => {
           sample: { idleMs: 0, app },
           elapsedMs: MINUTE,
           nowMs: T0,
-          external,
+          evidence,
+          observedCommits: ['a', 'b', 'c', 'd', 'e'],
+          tasksDone: 99,
         }).state;
       }
       return state.creature.xp;
     }
 
-    const sansSource = journee([], { commits: 0, tasksDone: 0 });
-    const toutBranche = journee(['dev', 'taches'], { commits: 99, tasksDone: 99 });
+    const sansSource = journee({ watchedRepos: 0, tasks: 0 });
+    const toutBranche = journee({ watchedRepos: 3, tasks: 10 });
 
     expect(sansSource).toBe(toutBranche);
   });
