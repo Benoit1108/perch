@@ -9,12 +9,13 @@ import { Overlay } from '../overlay/window.js';
 import { defaultsFrom, discoverPacks } from '../packs/discover.js';
 import { detectSensors } from '../sensors/detect.js';
 import { nullSensors } from '../sensors/null.js';
-import { progressFor } from '@perch/core';
+import { defaultEarnConfig, progressFor, resolveLocale } from '@perch/core';
 
 import { bootstrap } from './bootstrap.js';
 import { installEscapeHatches } from './escape-hatches.js';
 import { startLoop } from './loop.js';
 import { startProgression } from './progression.js';
+import { Voice } from './voice.js';
 
 /**
  * Point d'entrée du process principal.
@@ -56,16 +57,18 @@ async function main(): Promise<void> {
     monitors: () => screen.getAllDisplays().map((display) => display.bounds),
   });
 
+  const voice = new Voice(resolveLocale(app.getLocale()), systemClock);
+
   const progression = startProgression(state, {
     clock: systemClock,
     activity: await detectActivity(),
     storage,
     sources: snapshotSources,
     onLevelUp: (level) => {
-      console.log(`[perch] niveau ${String(level)} !`);
+      voice.say({ key: 'speech.levelUp', register: 'evenement', params: { level } });
     },
-    onQuestDone: (questId) => {
-      console.log(`[perch] quete accomplie : ${questId}`);
+    onQuestDone: () => {
+      voice.say({ key: 'speech.questDone', register: 'evenement' });
     },
   });
 
@@ -73,6 +76,9 @@ async function main(): Promise<void> {
     overlay,
     sensors,
     debug: process.env['PERCH_DEBUG'] === '1',
+    voice,
+    // La concentration est une donnée du moteur d'expérience, pas de l'animation.
+    isFocused: () => (progression.current().day?.focusMs ?? 0) >= defaultEarnConfig.focusAfterMs,
   });
 
   app.on('will-quit', () => {

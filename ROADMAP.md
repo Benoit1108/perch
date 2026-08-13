@@ -203,13 +203,21 @@ spécialisées ne le sont pas encore :
 Sans elles, un profil `dev` reçoit ses quêtes de développement mais ne peut pas les
 valider. C'est visible et assumé, pas silencieux.
 
-### S5 — Personnalité
+### S5 — Personnalité ✅ (voix), réglages restants
 
-- Bulles, plafond d'une toutes les 15 min, file de priorité
-- Silence pendant la concentration et en plein écran (I6)
-- Quatre registres : événement, humeur, interaction directe, bavardage aléatoire
-- Locales FR/EN + test de parité des clés
-- Fenêtre de réglages, thème clair/sombre par jetons CSS
+- ✅ Bulles, plafond d'une toutes les 15 min, file de priorité qui **écarte** les demandes
+  les moins importantes au lieu de les empiler — un compagnon qui rattrape son retard de
+  bavardage après une réunion est insupportable
+- ✅ Silence pendant la concentration **et** en plein écran (I6). Le plein écran est
+  DÉDUIT de la géométrie déjà observée : une fenêtre couvrant un écran entier. Aucune
+  capacité système supplémentaire n'est demandée
+- ✅ Demandes périmées abandonnées : une réaction à un événement d'il y a dix minutes n'a
+  plus de sens et ne doit pas surgir plus tard
+- ✅ Quatre registres, par priorité : événement, interaction, humeur, bavardage
+- ✅ Locales FR/EN, catalogues embarqués (`core` n'a pas le droit de lire le disque),
+  parité garantie par le typage **et** vérifiée par un test
+- ⏳ **Fenêtre de réglages et thème clair/sombre** — pas faite. C'est elle qui apportera
+  la liste de tâches interne attendue depuis S4.
 
 ### S6 — Créatures et évolutions
 

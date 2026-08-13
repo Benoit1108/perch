@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Rect } from '../ports/geometry.js';
-import { boundingBox, buildSurfaces, groundBelow, isSupported } from './surfaces.js';
+import { boundingBox, buildSurfaces, groundBelow, isFullscreen, isSupported } from './surfaces.js';
 
 /**
  * La disposition réelle de la machine de développement : deux écrans côte à côte, le
@@ -137,5 +137,29 @@ describe('boundingBox', () => {
       width: 200,
       height: 100,
     });
+  });
+});
+
+describe('isFullscreen', () => {
+  it('détecte une fenêtre couvrant exactement un écran', () => {
+    expect(isFullscreen([dp3], [{ x: 0, y: 0, width: 1920, height: 1080 }])).toBe(true);
+  });
+
+  it('tolère un écart de quelques pixels', () => {
+    expect(isFullscreen([dp3], [{ x: 1, y: 1, width: 1918, height: 1078 }])).toBe(true);
+  });
+
+  it('ignore une fenêtre ordinaire', () => {
+    expect(isFullscreen([dp3], [{ x: 100, y: 100, width: 800, height: 600 }])).toBe(false);
+  });
+
+  it('ignore une fenêtre maximisée sur un écran plus petit qu’un autre', () => {
+    // Plein écran sur le portable : cela compte, c'est bien un plein écran.
+    expect(isFullscreen(enL, [{ x: 1041, y: 1080, width: 1920, height: 1080 }])).toBe(true);
+  });
+
+  it('renvoie false sans fenêtre ni écran', () => {
+    expect(isFullscreen([], [])).toBe(false);
+    expect(isFullscreen([dp3], [])).toBe(false);
   });
 });

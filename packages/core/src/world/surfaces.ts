@@ -80,6 +80,31 @@ export function isSupported(surfaces: readonly Surface[], x: number, y: number):
   return groundBelow(surfaces, x, y) !== null;
 }
 
+/**
+ * Une fenêtre couvre-t-elle entièrement un écran ?
+ *
+ * Sert l'invariant I6 : le compagnon se tait et se cache en plein écran — visioconférence,
+ * présentation, jeu. On le déduit de la géométrie déjà observée plutôt que de demander une
+ * capacité supplémentaire au système.
+ *
+ * La tolérance absorbe les écarts d'un pixel dus aux facteurs d'échelle.
+ */
+export function isFullscreen(
+  monitors: readonly Rect[],
+  windows: readonly Rect[],
+  tolerance = 2
+): boolean {
+  return windows.some((window) =>
+    monitors.some(
+      (screen) =>
+        window.x <= screen.x + tolerance &&
+        window.y <= screen.y + tolerance &&
+        window.x + window.width >= screen.x + screen.width - tolerance &&
+        window.y + window.height >= screen.y + screen.height - tolerance
+    )
+  );
+}
+
 /** Union englobante de rectangles. Ce n'est PAS la surface utilisable : elle inclut le vide. */
 export function boundingBox(rects: readonly Rect[]): Rect | null {
   const first = rects[0];

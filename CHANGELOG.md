@@ -9,6 +9,15 @@ adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 
 ### Added
 
+- **Sprint S5 — Personnalité.** Le compagnon parle, et surtout il sait se taire : une
+  bulle par quart d'heure au maximum, silence total pendant la concentration et en plein
+  écran, demandes périmées abandonnées.
+- File de priorité à quatre registres qui **écarte** les demandes les moins importantes
+  plutôt que de les empiler.
+- Détection du plein écran déduite de la géométrie déjà observée — le compagnon se cache
+  entièrement, il ne se contente pas de se taire.
+- Localisation FR/EN, catalogues embarqués en TypeScript et parité vérifiée.
+
 - **Sprint S4 — Quêtes et profils.** Équité garantie par construction : même nombre de
   quêtes pour tous, plafond quotidien réparti à parts égales. Brancher une source ne peut
   pas faire gagner davantage, seulement changer ce qu'on fait pour y arriver.
