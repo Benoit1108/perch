@@ -203,7 +203,7 @@ spécialisées ne le sont pas encore :
 Sans elles, un profil `dev` reçoit ses quêtes de développement mais ne peut pas les
 valider. C'est visible et assumé, pas silencieux.
 
-### S5 — Personnalité ✅ (voix), réglages restants
+### S5 — Personnalité ✅
 
 - ✅ Bulles, plafond d'une toutes les 15 min, file de priorité qui **écarte** les demandes
   les moins importantes au lieu de les empiler — un compagnon qui rattrape son retard de
@@ -216,8 +216,14 @@ valider. C'est visible et assumé, pas silencieux.
 - ✅ Quatre registres, par priorité : événement, interaction, humeur, bavardage
 - ✅ Locales FR/EN, catalogues embarqués (`core` n'a pas le droit de lire le disque),
   parité garantie par le typage **et** vérifiée par un test
-- ⏳ **Fenêtre de réglages et thème clair/sombre** — pas faite. C'est elle qui apportera
-  la liste de tâches interne attendue depuis S4.
+- ✅ **Fenêtre de réglages** : langue, mode privé, dépôts surveillés, liste de tâches.
+  Thème clair/sombre par jetons CSS — la palette claire est définie sur `:root`, la sombre
+  ne redéfinit QUE les jetons, aucune couleur n'existe uniquement dans une media query.
+- ✅ Ouverte par `npm run settings` : un second lancement ne démarre pas un deuxième
+  compagnon, il demande au premier d'ouvrir ses réglages. C'est la seule voie possible
+  puisque l'overlay laisse passer tous les clics — il n'y a rien sur quoi cliquer.
+- ✅ **Mode privé** : suspend toute mesure. Le compagnon s'endort et cesse de progresser.
+- ✅ La liste de tâches attendue depuis S4 alimente enfin la quête correspondante.
 
 ### S6 — Créatures et évolutions
 

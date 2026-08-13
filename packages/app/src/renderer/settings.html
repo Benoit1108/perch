@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'"
+    />
+    <title>Perch — réglages</title>
+    <style>
+      /* Jetons de thème. La palette claire est définie sur :root, la sombre ne redéfinit
+         QUE les jetons — aucune couleur n'existe uniquement dans une media query. */
+      :root {
+        --fond: #faf9fc;
+        --carte: #f1eff6;
+        --trait: #dad5e6;
+        --encre: #1b1826;
+        --encre-2: #4a4459;
+        --accent: #5b4cc4;
+        --danger: #b33f36;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --fond: #131120;
+          --carte: #1c1a2b;
+          --trait: #322e47;
+          --encre: #eeebf7;
+          --encre-2: #b9b2cc;
+          --accent: #9c8df0;
+          --danger: #e4796d;
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+        background: var(--fond);
+        color: var(--encre);
+        font:
+          14px/1.55 system-ui,
+          sans-serif;
+      }
+      h1 {
+        font-size: 1.3rem;
+        margin: 0 0 4px;
+      }
+      p.sous {
+        color: var(--encre-2);
+        margin: 0 0 24px;
+      }
+      section {
+        background: var(--carte);
+        border: 1px solid var(--trait);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      h2 {
+        font-size: 0.98rem;
+        margin: 0 0 10px;
+      }
+      .aide {
+        color: var(--encre-2);
+        font-size: 0.86rem;
+        margin: 6px 0 0;
+      }
+      label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 6px 0;
+      }
+      ul {
+        list-style: none;
+        margin: 8px 0 0;
+        padding: 0;
+      }
+      li {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 0;
+        border-top: 1px solid var(--trait);
+      }
+      li span.chemin {
+        font-family: ui-monospace, monospace;
+        font-size: 0.82rem;
+        color: var(--encre-2);
+        overflow-wrap: anywhere;
+      }
+      li span.fait {
+        text-decoration: line-through;
+        color: var(--encre-2);
+      }
+      button {
+        font: inherit;
+        color: var(--encre);
+        background: var(--fond);
+        border: 1px solid var(--trait);
+        border-radius: 6px;
+        padding: 4px 10px;
+        cursor: pointer;
+      }
+      button:hover {
+        border-color: var(--accent);
+      }
+      button.retirer {
+        color: var(--danger);
+        border-color: transparent;
+        background: none;
+      }
+      input[type='text'],
+      select {
+        font: inherit;
+        color: var(--encre);
+        background: var(--fond);
+        border: 1px solid var(--trait);
+        border-radius: 6px;
+        padding: 5px 8px;
+      }
+      input[type='text'] {
+        flex: 1;
+      }
+      .ligne {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      #etat {
+        color: var(--encre-2);
+        font-size: 0.86rem;
+        min-height: 1.4em;
+      }
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Perch</h1>
+    <p class="sous">Tout reste sur cette machine. Aucun compte, aucun serveur.</p>
+
+    <section>
+      <h2>Langue</h2>
+      <select id="locale">
+        <option value="">Celle du système</option>
+        <option value="fr">Français</option>
+        <option value="en">English</option>
+      </select>
+    </section>
+
+    <section>
+      <h2>Mode privé</h2>
+      <label>
+        <input type="checkbox" id="prive" />
+        Suspendre toute mesure
+      </label>
+      <p class="aide">
+        Le compagnon s'endort et cesse de progresser. Aucune activité n'est mesurée tant que la case
+        est cochée.
+      </p>
+    </section>
+
+    <section>
+      <h2>Dépôts surveillés</h2>
+      <p class="aide">
+        Ajoutés avec <code>npm run watch</code> depuis l'intérieur d'un dépôt. Seuls les
+        identifiants de commit sont lus — jamais un message, un nom de fichier ou un diff.
+      </p>
+      <ul id="depots"></ul>
+    </section>
+
+    <section>
+      <h2>Tâches du jour</h2>
+      <ul id="taches"></ul>
+      <div class="ligne">
+        <input type="text" id="nouvelle" placeholder="Ajouter une tâche…" />
+        <button id="ajouter">Ajouter</button>
+      </div>
+    </section>
+
+    <div id="etat"></div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      let config = null;
+
+      const aujourdhui = () => new Date().toISOString().slice(0, 10);
+
+      function rendre() {
+        $('locale').value = config.locale ?? '';
+        $('prive').checked = config.privateMode;
+
+        $('depots').innerHTML =
+          config.repos.length === 0
+            ? '<li><span class="chemin">Aucun dépôt surveillé.</span></li>'
+            : config.repos
+                .map(
+                  (repo, i) =>
+                    `<li><span class="chemin">${repo}</span><button class="retirer" data-repo="${String(i)}">retirer</button></li>`
+                )
+                .join('');
+
+        $('taches').innerHTML =
+          config.tasks.length === 0
+            ? '<li><span class="chemin">Aucune tâche.</span></li>'
+            : config.tasks
+                .map((t, i) => {
+                  const fait = t.doneOn === aujourdhui();
+                  return `<li><input type="checkbox" data-tache="${String(i)}" ${fait ? 'checked' : ''} /><span class="${fait ? 'fait' : ''}">${t.label}</span><button class="retirer" data-suppr="${String(i)}">retirer</button></li>`;
+                })
+                .join('');
+      }
+
+      async function enregistrer() {
+        const reponse = await window.perchSettings.write(config);
+        $('etat').textContent = reponse.ok ? 'Enregistré.' : `Refusé : ${reponse.error}`;
+        setTimeout(() => {
+          $('etat').textContent = '';
+        }, 2500);
+      }
+
+      document.addEventListener('change', async (event) => {
+        const cible = event.target;
+
+        if (cible.id === 'locale') {
+          config.locale = cible.value === '' ? null : cible.value;
+        } else if (cible.id === 'prive') {
+          config.privateMode = cible.checked;
+        } else if (cible.dataset.tache !== undefined) {
+          const index = Number(cible.dataset.tache);
+          config.tasks = config.tasks.map((t, i) =>
+            i === index ? { ...t, doneOn: cible.checked ? aujourdhui() : null } : t
+          );
+        } else {
+          return;
+        }
+
+        rendre();
+        await enregistrer();
+      });
+
+      document.addEventListener('click', async (event) => {
+        const cible = event.target;
+
+        if (cible.dataset?.repo !== undefined) {
+          const index = Number(cible.dataset.repo);
+          config.repos = config.repos.filter((_, i) => i !== index);
+        } else if (cible.dataset?.suppr !== undefined) {
+          const index = Number(cible.dataset.suppr);
+          config.tasks = config.tasks.filter((_, i) => i !== index);
+        } else if (cible.id === 'ajouter') {
+          const label = $('nouvelle').value.trim();
+          if (label === '') return;
+          config.tasks = [
+            ...config.tasks,
+            { id: `${String(Date.now())}-${String(config.tasks.length)}`, label, doneOn: null },
+          ];
+          $('nouvelle').value = '';
+        } else {
+          return;
+        }
+
+        rendre();
+        await enregistrer();
+      });
+
+      window.perchSettings.read().then((c) => {
+        config = c;
+        rendre();
+      });
+    </script>
+  </body>
+</html>

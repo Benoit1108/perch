@@ -17,6 +17,9 @@ adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 - Détection du plein écran déduite de la géométrie déjà observée — le compagnon se cache
   entièrement, il ne se contente pas de se taire.
 - Localisation FR/EN, catalogues embarqués en TypeScript et parité vérifiée.
+- Fenêtre de réglages : langue, mode privé, dépôts surveillés, liste de tâches. Ouverte
+  par `npm run settings`, un second lancement demandant au premier de l'afficher.
+- Mode privé qui **suspend** la mesure plutôt que de l'atténuer.
 
 - **Sprint S4 — Quêtes et profils.** Équité garantie par construction : même nombre de
   quêtes pour tous, plafond quotidien réparti à parts égales. Brancher une source ne peut

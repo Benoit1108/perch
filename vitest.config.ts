@@ -23,6 +23,7 @@ export default defineConfig({
         'packages/app/src/main/index.ts',
         'packages/app/src/main/escape-hatches.ts',
         'packages/app/src/overlay/**',
+        'packages/app/src/settings/**',
         'packages/app/src/sensors/gnome.ts',
         'packages/app/src/activity/gnome.ts',
         // L'extension GNOME est volontairement trop mince pour mériter des tests (I2),

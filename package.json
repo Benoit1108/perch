@@ -24,6 +24,7 @@
     "setup:sandbox": "bash scripts/fix-sandbox.sh",
     "stop": "node scripts/stop.mjs",
     "watch": "node scripts/watch.mjs",
+    "settings": "npm run typecheck && npm start --workspace @perch/app -- --settings",
     "start": "npm run typecheck && npm start --workspace @perch/app",
     "health": "npm run format:check && npm run lint && npm run typecheck && npm run deps && npm run dead && npm run test",
     "clean": "tsc --build --clean"

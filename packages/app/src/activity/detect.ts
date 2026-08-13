@@ -15,6 +15,20 @@ const noActivity: ActivityPort = {
 };
 
 /**
+ * Enveloppe une source pour respecter le mode privé.
+ *
+ * Le mode privé n'atténue pas la mesure : il la SUSPEND. Renvoyer une inactivité franche
+ * suffit — le compagnon s'endort et cesse de progresser, sans qu'aucun autre module ait
+ * besoin de connaître ce réglage.
+ */
+export function withPrivacy(sensors: ActivityPort, isPrivate: () => boolean): ActivityPort {
+  return {
+    idleMs: () => (isPrivate() ? Promise.resolve(Number.MAX_SAFE_INTEGER) : sensors.idleMs()),
+    focusedApp: () => (isPrivate() ? Promise.resolve(null) : sensors.focusedApp()),
+  };
+}
+
+/**
  * Choisit la meilleure source d'activité disponible.
  *
  * Le moniteur d'inactivité appartient à GNOME, pas à notre extension : la progression

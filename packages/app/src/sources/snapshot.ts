@@ -1,4 +1,4 @@
-import { readConfig } from '../config/repos.js';
+import { readConfig, tasksDoneOn } from '../config/repos.js';
 import type { SourceSnapshot } from '../main/progression.js';
 import { collectCommits } from './git.js';
 
@@ -11,12 +11,13 @@ import { collectCommits } from './git.js';
  */
 export async function snapshotSources(): Promise<SourceSnapshot> {
   const config = await readConfig();
+  const today = new Date().toISOString().slice(0, 10);
 
   return {
-    // Le profil « dev » naît de la preuve — un dépôt surveillé — et non d'une case cochée.
-    evidence: { watchedRepos: config.repos.length, tasks: 0 },
+    // Les profils naissent des PREUVES — un dépôt surveillé, une tâche créée — et non de
+    // cases cochées. Une quête qu'aucune source ne sait mesurer n'est jamais proposée.
+    evidence: { watchedRepos: config.repos.length, tasks: config.tasks.length },
     observedCommits: await collectCommits(config.repos),
-    // La liste de tâches interne arrive avec la fenêtre de réglages, en S5.
-    tasksDone: 0,
+    tasksDone: tasksDoneOn(config, today),
   };
 }
