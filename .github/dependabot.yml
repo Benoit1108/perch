@@ -1,0 +1,37 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(deps)'
+    groups:
+      # Regrouper l'outillage : ces montées de version vont ensemble et n'ont aucun
+      # intérêt à être revues une par une.
+      outillage:
+        patterns:
+          - '@typescript-eslint/*'
+          - typescript-eslint
+          - eslint
+          - '@eslint/*'
+          - prettier
+          - vitest
+          - '@vitest/*'
+          - knip
+          - dependency-cruiser
+    ignore:
+      # ⛔ Electron est épinglé en 42.x : à partir de 43.2.0, `setIgnoreMouseEvents` ne
+      # réduit plus la région d'entrée X11 et l'overlay avale TOUS les clics du bureau
+      # (electron#52456). Voir spike/README.md, constat 7 bis. À lever seulement après
+      # avoir vérifié le comportement à la main.
+      - dependency-name: electron
+        update-types: ['version-update:semver-major']
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: 'ci'

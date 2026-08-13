@@ -1,0 +1,18 @@
+{
+  "name": "perch-spike",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Spike S0 — code jetable, hors architecture et hors qualite. Voir ../ROADMAP.md",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron . --ozone-platform=x11",
+    "start:debug": "PERCH_DEBUG=1 electron . --ozone-platform=x11",
+    "start:opaque": "PERCH_OPAQUE=1 PERCH_DEBUG=1 electron . --ozone-platform=x11"
+  },
+  "dependencies": {
+    "dbus-next": "^0.10.2"
+  },
+  "devDependencies": {
+    "electron": "^42.7.0"
+  }
+}

@@ -1,0 +1,7 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Spike S0 : code jetable, hors des règles de qualité (voir spike/README.md).
+spike/

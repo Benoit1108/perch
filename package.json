@@ -1,0 +1,42 @@
+{
+  "name": "perch",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Un compagnon pixelise qui vit sur le bureau, se perche au bord des fenetres et grandit avec votre facon d'utiliser la machine.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --build --force",
+    "deps": "depcruise packages --config .dependency-cruiser.cjs",
+    "dead": "knip",
+    "test": "vitest run --coverage",
+    "commitlint": "commitlint --edit",
+    "verify:guardrails": "bash scripts/verify-guardrails.sh",
+    "health": "npm run format:check && npm run lint && npm run typecheck && npm run deps && npm run dead && npm run test",
+    "clean": "tsc --build --clean"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.13.3",
+    "@vitest/coverage-v8": "^4.1.10",
+    "dependency-cruiser": "^18.2.0",
+    "eslint": "^10.8.1",
+    "globals": "^17.11.0",
+    "knip": "^6.32.2",
+    "prettier": "^3.9.6",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.67.0",
+    "vitest": "^4.1.10"
+  }
+}

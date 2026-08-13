@@ -1,0 +1,14 @@
+{
+  "name": "@perch/app",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Le corps : rendu Electron, physique, adaptateurs de capteurs.",
+  "main": "./dist/main/index.js",
+  "dependencies": {
+    "@perch/core": "*"
+  },
+  "devDependencies": {
+    "electron": "^42.7.0"
+  }
+}

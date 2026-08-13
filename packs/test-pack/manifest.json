@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "test-pack",
+  "name": "Pack de test",
+  "license": "CC0-1.0",
+  "lines": [
+    {
+      "id": "brindille",
+      "stages": [
+        { "id": "brindille-1", "name": "Brindille", "sprite": "brindille-1.png", "fromLevel": 1 },
+        { "id": "brindille-2", "name": "Ramure", "sprite": "brindille-2.png", "fromLevel": 16 },
+        { "id": "brindille-3", "name": "Futaie", "sprite": "brindille-3.png", "fromLevel": 36 }
+      ]
+    },
+    {
+      "id": "braise",
+      "stages": [
+        { "id": "braise-1", "name": "Braise", "sprite": "braise-1.png", "fromLevel": 1 },
+        { "id": "braise-2", "name": "Flammèche", "sprite": "braise-2.png", "fromLevel": 16 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Perch — spike</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: transparent;
+        user-select: none;
+        /* PAS de `cursor: none` ici : l'overlay couvre TOUT le bureau, donc masquer le
+           curseur le masque partout. C'est ce qui a fait « perdre la souris ». */
+      }
+
+      #pet {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 96px;
+        height: 96px;
+        will-change: transform;
+        transform: translate3d(-200px, -200px, 0);
+      }
+
+      #pet img {
+        width: 96px;
+        height: 96px;
+        object-fit: contain;
+        image-rendering: pixelated;
+        -webkit-user-drag: none;
+      }
+
+      #bubble {
+        position: absolute;
+        bottom: 92px;
+        left: 50%;
+        transform: translateX(-50%);
+        white-space: nowrap;
+        font: 600 13px/1.3 system-ui, sans-serif;
+        color: #2b2118;
+        background: #fdf6d8;
+        border: 2px solid #2b2118;
+        border-radius: 10px;
+        padding: 5px 10px;
+        opacity: 0;
+        transition: opacity 0.25s;
+      }
+      #bubble.on {
+        opacity: 1;
+      }
+
+      #hud {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        font: 12px/1.5 ui-monospace, monospace;
+        color: #e8e4f5;
+        background: rgba(16, 14, 26, 0.82);
+        border: 1px solid rgba(160, 150, 200, 0.4);
+        border-radius: 6px;
+        padding: 8px 12px;
+        white-space: pre;
+      }
+
+      #overlay-svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <svg id="overlay-svg"></svg>
+
+    <div id="pet">
+      <div id="bubble">Hé, ça bouge !</div>
+      <img id="sprite" alt="" />
+    </div>
+
+    <div id="hud" hidden></div>
+
+    <script>
+      const pet = document.getElementById('pet');
+      const sprite = document.getElementById('sprite');
+      const bubble = document.getElementById('bubble');
+      const hud = document.getElementById('hud');
+      const svg = document.getElementById('overlay-svg');
+
+      sprite.src = './assets/pet.gif';
+
+      // Le pet suit le curseur avec du retard : c'est ce retard qui le rend vivant
+      // plutôt que collé au pointeur.
+      const EASE = 0.055;
+      const OFFSET_Y = 40;
+      const SIZE = 96;
+
+      // Position de départ volontairement visible : si la fenêtre s'affiche, le sprite
+      // doit apparaître ici même sans la moindre donnée de capteur. Ça sépare
+      // « la fenêtre ne rend pas » de « les capteurs ne répondent pas ».
+      let px = 300;
+      let py = 300;
+      let facing = 1;
+      let lastFrame = null;
+      let hudPainted = 0;
+
+      function paintDebug(frame) {
+        const parts = [];
+        const ox = frame.origin.x;
+        const oy = frame.origin.y;
+
+        for (const m of frame.monitors) {
+          parts.push(
+            `<rect x="${m.x - ox}" y="${m.y - oy}" width="${m.width}" height="${m.height}"
+               fill="none" stroke="rgb(155,141,240)" stroke-width="2" stroke-dasharray="10 8"/>`
+          );
+        }
+        // Bord supérieur de chaque fenêtre = la surface sur laquelle le pet se perchera.
+        for (const w of frame.windows) {
+          parts.push(
+            `<line x1="${w.x - ox}" y1="${w.y - oy}" x2="${w.x + w.width - ox}" y2="${w.y - oy}"
+               stroke="rgb(233,178,94)" stroke-width="3"/>`
+          );
+        }
+        svg.innerHTML = parts.join('');
+      }
+
+      function paintHud(frame) {
+        hud.hidden = false;
+        hud.textContent =
+          `backend   ${frame.backend}\n` +
+          `curseur   ${frame.pointer.x}, ${frame.pointer.y}\n` +
+          `ecrans    ${frame.monitors.length}\n` +
+          `fenetres  ${frame.seesWindows ? frame.windows.length : 'aveugle'}`;
+      }
+
+      console.log('script demarre');
+      sprite.addEventListener('load', () => console.log('sprite charge'));
+      sprite.addEventListener('error', () => console.log('SPRITE INTROUVABLE'));
+
+      if (window.perch === undefined) {
+        console.log('ERREUR : window.perch absent (preload non charge)');
+      } else {
+        window.perch.onFrame((frame) => {
+          lastFrame = frame;
+          if (!frame.debug) return;
+          paintHud(frame);
+          hudPainted += 1;
+          if (hudPainted % 15 === 0) paintDebug(frame);
+        });
+      }
+
+      function tick() {
+        if (lastFrame !== null) {
+          const targetX = lastFrame.pointer.x - lastFrame.origin.x - SIZE / 2;
+          const targetY = lastFrame.pointer.y - lastFrame.origin.y - SIZE / 2 + OFFSET_Y;
+
+          const dx = targetX - px;
+          px += dx * EASE;
+          py += (targetY - py) * EASE;
+
+          if (Math.abs(dx) > 2) facing = dx > 0 ? 1 : -1;
+
+          pet.style.transform = `translate3d(${px.toFixed(1)}px, ${py.toFixed(1)}px, 0)`;
+          sprite.style.transform = `scaleX(${facing})`;
+        }
+        requestAnimationFrame(tick);
+      }
+
+      requestAnimationFrame(tick);
+      if (window.perch !== undefined) window.perch.ready();
+
+      // Une bulle au démarrage, pour valider le rendu du texte par-dessus les fenêtres.
+      setTimeout(() => bubble.classList.add('on'), 1200);
+      setTimeout(() => bubble.classList.remove('on'), 5200);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+
+  // Le spike S0 est du code jetable, hors des règles de qualité (voir spike/README.md).
+  // Il est conservé pour ses constats, pas pour être maintenu.
+  "ignore": ["spike/**"],
+
+  "workspaces": {
+    "packages/shell": {
+      // GNOME charge l'extension via son `metadata.json`, que knip ne sait pas lire :
+      // sans cette déclaration, le point d'entrée passe pour un fichier mort.
+      "entry": ["src/extension.ts"],
+
+      // GJS résout lui-même `gi://Gio` et `resource:///org/gnome/shell/...`. Ce ne sont
+      // pas des paquets npm : knip les prend pour des dépendances manquantes.
+      "ignoreDependencies": ["gi", "resource"],
+    },
+  },
+}

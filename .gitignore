@@ -1,0 +1,18 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+*.log
+
+# INVARIANT I5 — aucun sprite committé, jamais.
+# Les packs de créatures sont téléchargés à l'installation.
+packs/*/sprites/
+spike/assets/
+
+# Spike S0 : le code source est conservé pour ses constats, pas ses dépendances.
+spike/node_modules/
+
+# Runtime Claude Code
+.claude/scheduled_tasks.lock
+
+.DS_Store

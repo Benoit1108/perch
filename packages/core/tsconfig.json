@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    // Les types Node servent aux TESTS (lecture d'un manifeste sur disque). Le code de
+    // production, lui, n'a pas le droit d'importer un module système : c'est la règle A2
+    // de dependency-cruiser qui le vérifie, pas la disponibilité des types.
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts"]
+}

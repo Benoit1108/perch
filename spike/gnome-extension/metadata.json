@@ -1,0 +1,7 @@
+{
+  "uuid": "perch-sensors@perch.local",
+  "name": "Perch Sensors (spike)",
+  "description": "Expose la position du curseur, la geometrie des fenetres et celle des ecrans sur D-Bus. Capteurs uniquement, aucune logique de jeu.",
+  "shell-version": ["48", "49", "50"],
+  "version": 1
+}

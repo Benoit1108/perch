@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    // Aucun type ambiant automatique : l'extension tourne sous GJS, pas sous Node.
+    // Les déclarations nécessaires sont référencées explicitement dans src/gnome.d.ts.
+    "types": []
+  },
+  "include": ["src/**/*.ts"]
+}

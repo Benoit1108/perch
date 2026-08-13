@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  health:
+    name: Portes de qualité
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # Étapes séparées plutôt qu'un seul `npm run health` : quand la CI rougit, on veut
+      # voir LAQUELLE a lâché sans dérouler un journal.
+      - name: Formatage
+        run: npm run format:check
+      - name: Lint
+        run: npm run lint
+      - name: Types
+        run: npm run typecheck
+      - name: Architecture (dependency-cruiser)
+        run: npm run deps
+      - name: Code mort (knip)
+        run: npm run dead
+      - name: Tests et couverture
+        run: npm test
+
+  guardrails:
+    name: Les garde-fous protègent-ils encore ?
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # Introduit délibérément des violations et exige qu'elles soient rejetées.
+      # Une règle mal ciblée laisse `health` au vert tout en ne protégeant plus rien.
+      - name: Vérification des garde-fous
+        run: npm run verify:guardrails
+
+  audit:
+    name: Vulnérabilités
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+      - run: npm audit --audit-level=high
