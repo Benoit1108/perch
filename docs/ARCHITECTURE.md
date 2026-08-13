@@ -66,6 +66,8 @@ core/src/
 ├── xp/           socle, multiplicateurs, courbe de niveaux
 ├── quests/       moteur de quêtes quotidiennes, profils
 ├── creatures/    manifeste de pack, chargeur, règles d'évolution
+├── world/        surfaces marchables, zones vides, géométrie multi-écrans
+├── motion/       machine à états et pesanteur du compagnon
 ├── state/        schémas zod, migrations, forme de l'état
 └── ports/        SensorPort · StoragePort · ClockPort  (types uniquement)
 ```
@@ -80,8 +82,13 @@ système, elle passe par un port.
 app/src/
 ├── main/         process principal Electron, cycle de vie, IPC
 ├── renderer/     sprite, bulles, fenêtre de réglages
-├── physics/      machine à états, gravité, surfaces marchables
+├── overlay/      fenêtre transparente, géométrie, clics traversants
 └── sensors/      gnome/ · x11/ · win32/ · null/   (adaptateurs de SensorPort)
+
+La physique vit dans `core`, PAS ici (décision du 2026-08-13). Surfaces, pesanteur et
+machine à états sont du calcul pur : les placer dans `app` les aurait rendues testables
+uniquement à travers Electron, et les aurait soustraites au seuil de couverture de 90 %.
+`app` ne garde que ce qui touche l'écran.
 ```
 
 `main` et `renderer` ne s'importent **jamais** l'un l'autre — ils communiquent par IPC,
