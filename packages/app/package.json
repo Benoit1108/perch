@@ -3,13 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Le corps : rendu Electron, physique, adaptateurs de capteurs.",
+  "description": "Le corps : rendu Electron, overlay, adaptateurs de capteurs.",
   "main": "./dist/main/index.js",
   "scripts": {
-    "start": "electron . --ozone-platform=x11"
+    "assets": "node ./scripts/copy-renderer.mjs",
+    "start": "npm run assets && electron . --ozone-platform=x11"
   },
   "dependencies": {
-    "@perch/core": "*"
+    "@perch/core": "*",
+    "zod": "^4.4.3",
+    "dbus-next": "^0.10.2"
   },
   "devDependencies": {
     "electron": "^42.7.0"

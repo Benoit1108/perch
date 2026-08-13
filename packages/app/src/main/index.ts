@@ -1,25 +1,27 @@
-import { app } from 'electron';
+import { app, screen } from 'electron';
 import { fileURLToPath } from 'node:url';
 
 import { systemClock } from '../adapters/clock.js';
 import { createFileStorage } from '../adapters/storage.js';
+import { Overlay } from '../overlay/window.js';
 import { defaultsFrom, discoverPacks } from '../packs/discover.js';
+import { detectSensors } from '../sensors/detect.js';
 import { nullSensors } from '../sensors/null.js';
 import { bootstrap } from './bootstrap.js';
+import { installEscapeHatches } from './escape-hatches.js';
+import { startLoop } from './loop.js';
 
 /**
  * Point d'entrée du process principal.
  *
- * S1 ne fait que composer les ports et relire l'état : la fenêtre, la physique et le
- * rendu arrivent en S2. Le squelette existe pour que l'architecture soit vérifiée par
- * `dependency-cruiser` sur du vrai code, pas sur une intention.
- *
- * ⚠️ `--ozone-platform=x11` doit être passé en LIGNE DE COMMANDE sur Linux.
- * `app.commandLine.appendSwitch` est sans effet : Electron choisit sa plateforme
- * d'affichage avant d'exécuter ce fichier. Voir spike/README.md, constat n°0.
+ * ⚠️ `--ozone-platform=x11` doit être passé en LIGNE DE COMMANDE sur Linux (voir le script
+ * `start`). `app.commandLine.appendSwitch` est sans effet : Electron choisit sa plateforme
+ * d'affichage avant d'exécuter ce fichier, et l'application tourne alors en client Wayland
+ * natif où `setBounds` et `setAlwaysOnTop` sont ignorés en silence.
  */
 async function main(): Promise<void> {
   await app.whenReady();
+  installEscapeHatches();
 
   const packsRoot = fileURLToPath(new URL('../../../../packs', import.meta.url));
   const defaults = defaultsFrom(await discoverPacks(packsRoot));
@@ -43,10 +45,30 @@ async function main(): Promise<void> {
     );
   }
 
+  const overlay = new Overlay();
+  const sensors = await detectSensors({
+    monitors: () => screen.getAllDisplays().map((display) => display.bounds),
+  });
+
+  const stop = startLoop({
+    overlay,
+    sensors,
+    debug: process.env['PERCH_DEBUG'] === '1',
+  });
+
+  app.on('will-quit', () => {
+    stop();
+    overlay.destroy();
+  });
+
   console.log(
     `[perch] ${state.creature.lineId} niveau ${String(state.creature.level)}, ` +
-      `capteurs « ${nullSensors.name} »`
+      `capteurs « ${sensors.name} »`
   );
 }
 
 void main();
+
+app.on('window-all-closed', () => {
+  app.quit();
+});

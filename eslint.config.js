@@ -124,14 +124,18 @@ export default defineConfig([
     },
   },
 
-  // `.dependency-cruiser.cjs` est en CommonJS : `module` et `require` y sont légitimes.
+  // CommonJS assumé : `.dependency-cruiser.cjs`, et le préchargement de l'overlay —
+  // Electron ne charge pas de module ESM dans un preload avec `sandbox: true`.
   {
     files: ['**/*.cjs'],
     languageOptions: {
       sourceType: 'commonjs',
-      globals: globals.node,
+      globals: { ...globals.node, ...globals.browser },
     },
     extends: [tseslint.configs.disableTypeChecked],
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+    },
   },
 
   // Scripts de build en ESM Node. Ils n'appartiennent à aucun tsconfig — les analyser en

@@ -4,9 +4,6 @@
  * Elle est volontairement limitée à ce qui est RÉELLEMENT consommé aujourd'hui. Un baril
  * qui réexporte par anticipation est du code mort en attente : knip le signale, et c'est
  * voulu. Chaque sprint ajoute ici ce dont il a besoin, au moment où il en a besoin.
- *
- * Le reste (`stageForLevel`, `findLine`, `ActivityPort`…) existe et est testé dans son
- * module ; seule son exposition attend son premier consommateur.
  */
 
 export type {
@@ -23,3 +20,10 @@ export { parseCreaturePack } from './creatures/pack.js';
 
 export type { PerchState } from './state/schema.js';
 export { createInitialState, readState } from './state/schema.js';
+
+export type { Surface } from './world/surfaces.js';
+export { boundingBox, buildSurfaces } from './world/surfaces.js';
+
+export type { MotionConfig, Pet } from './motion/pet.js';
+export { defaultMotionConfig } from './motion/pet.js';
+export { step } from './motion/machine.js';

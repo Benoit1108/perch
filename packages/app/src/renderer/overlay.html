@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'"
+    />
+    <title>Perch</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: transparent;
+        user-select: none;
+      }
+
+      /* PAS de `cursor: none` : l'overlay couvre tout le bureau, masquer le curseur
+         le masquerait partout. Piège rencontré en S0. */
+
+      #pet {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 48px;
+        height: 48px;
+        margin-left: -24px;
+        margin-top: -48px;
+        will-change: transform;
+        transform: translate3d(-200px, -200px, 0);
+      }
+
+      /* Marqueur provisoire. Les vraies créatures arrivent en S6 : aucun sprite n'est
+         committé dans ce dépôt (invariant I5). */
+      #corps {
+        width: 100%;
+        height: 100%;
+        border-radius: 46% 46% 40% 40%;
+        background: linear-gradient(160deg, #7b6bf0, #4b3fb0);
+        box-shadow: 0 3px 10px rgb(0 0 0 / 35%);
+        position: relative;
+      }
+      #corps::before,
+      #corps::after {
+        content: '';
+        position: absolute;
+        top: 34%;
+        width: 7px;
+        height: 9px;
+        border-radius: 50%;
+        background: #fdfdff;
+      }
+      #corps::before {
+        left: 24%;
+      }
+      #corps::after {
+        right: 24%;
+      }
+
+      #pet[data-etat='sommeil'] #corps {
+        filter: saturate(0.5) brightness(0.8);
+      }
+      #pet[data-etat='chute'] #corps {
+        border-radius: 50% 50% 34% 34%;
+      }
+
+      #hud {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        font:
+          12px/1.5 ui-monospace,
+          monospace;
+        color: #e8e4f5;
+        background: rgb(16 14 26 / 82%);
+        border: 1px solid rgb(160 150 200 / 40%);
+        border-radius: 6px;
+        padding: 8px 12px;
+        white-space: pre;
+      }
+      #hud[hidden] {
+        display: none;
+      }
+
+      #surfaces {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <svg id="surfaces"></svg>
+    <div id="pet"><div id="corps"></div></div>
+    <div id="hud" hidden></div>
+
+    <script>
+      const pet = document.getElementById('pet');
+      const hud = document.getElementById('hud');
+      const svg = document.getElementById('surfaces');
+
+      let frame = null;
+      let peint = 0;
+
+      function dessinerSurfaces(f) {
+        const parts = f.surfaces.map(
+          (s) =>
+            `<line x1="${s.start - f.origin.x}" y1="${s.y - f.origin.y}" x2="${s.end - f.origin.x}" y2="${s.y - f.origin.y}" stroke="${s.kind === 'ecran' ? 'rgb(155,141,240)' : 'rgb(233,178,94)'}" stroke-width="3"/>`
+        );
+        svg.innerHTML = parts.join('');
+      }
+
+      window.perch.onFrame((f) => {
+        frame = f;
+        if (!f.debug) {
+          hud.hidden = true;
+          svg.innerHTML = '';
+          return;
+        }
+        hud.hidden = false;
+        hud.textContent =
+          `capteurs  ${f.backend}\n` +
+          `etat      ${f.pet.state}\n` +
+          `position  ${Math.round(f.pet.x)}, ${Math.round(f.pet.y)}\n` +
+          `curseur   ${f.pointer ? `${f.pointer.x}, ${f.pointer.y}` : 'inconnu'}\n` +
+          `surfaces  ${f.surfaces.length}`;
+        peint += 1;
+        if (peint % 20 === 1) dessinerSurfaces(f);
+      });
+
+      function tick() {
+        if (frame !== null) {
+          const x = frame.pet.x - frame.origin.x;
+          const y = frame.pet.y - frame.origin.y;
+          pet.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) scaleX(${frame.pet.facing})`;
+          pet.dataset.etat = frame.pet.state;
+        }
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    </script>
+  </body>
+</html>
