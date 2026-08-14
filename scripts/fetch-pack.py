@@ -28,6 +28,13 @@ try:
 except ImportError:
     sys.exit("Pillow manquant. Installer avec : pip install Pillow")
 
+# La console Windows repond en cp1252 : le moindre caractere hors de cette table fait
+# echouer un simple `print`, et la construction s'arrete sur une fleche.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 RACINE = Path(__file__).resolve().parent.parent
 
 
@@ -187,7 +194,7 @@ def main() -> int:
         shutil.rmtree(racine_sortie)
     racine_sortie.mkdir(parents=True)
 
-    print(f"Pack « {recette['name'] } » → {racine_sortie}")
+    print(f"Pack {recette['name']} -> {racine_sortie}")
     manifeste = construire(recette, racine_sortie, voulu)
 
     if not manifeste["lines"]:

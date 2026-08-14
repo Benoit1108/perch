@@ -40,6 +40,9 @@ export { advanceState } from './xp/progression.js';
 export type { Evidence } from './quests/evidence.js';
 export { noEvidence } from './quests/evidence.js';
 
+export type { Envelope } from './exchange/envelope.js';
+export { open, seal } from './exchange/envelope.js';
+
 export type { Locale } from './i18n/catalog.js';
 export { MESSAGE_KEYS, resolveLocale, translate } from './i18n/catalog.js';
 

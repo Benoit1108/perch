@@ -1,8 +1,8 @@
-import { open, mkdir, readFile, rename } from 'node:fs/promises';
-import { dirname } from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { readFile, rename } from 'node:fs/promises';
 
 import type { StoragePort, StorageRead } from '@perch/core';
+
+import { writeAtomic } from './atomic.js';
 
 /** `code` sur les erreurs Node système. Lu sans assertion de type. */
 function errorCode(error: unknown): string {
@@ -13,44 +13,7 @@ function errorCode(error: unknown): string {
   return 'UNKNOWN';
 }
 
-/**
- * Persistance JSON sur disque, en écriture atomique et durable.
- *
- * L'écriture passe par un fichier temporaire, un `fsync`, puis un renommage. Sans le
- * `fsync`, la promesse de résistance aux coupures de courant repose uniquement sur les
- * heuristiques d'ext4 — c'est-à-dire sur rien de garanti. Le nom temporaire porte un
- * suffixe aléatoire : un nom fixe fait que deux écritures concurrentes se marchent
- * dessus, et qu'un plantage laisse un résidu qui bloque les suivantes.
- */
-/** Une écriture atomique et durable, sans se soucier des autres. */
-async function writeOnce(filePath: string, value: unknown): Promise<void> {
-  await mkdir(dirname(filePath), { recursive: true });
-  const temporary = `${filePath}.${randomUUID()}.tmp`;
-
-  const handle = await open(temporary, 'w');
-  try {
-    await handle.writeFile(`${JSON.stringify(value, null, 2)}\n`, 'utf8');
-    await handle.sync();
-  } finally {
-    await handle.close();
-  }
-
-  await rename(temporary, filePath);
-
-  // Le renommage n'est durable qu'une fois le répertoire lui-même synchronisé.
-  try {
-    const directory = await open(dirname(filePath), 'r');
-    try {
-      await directory.sync();
-    } finally {
-      await directory.close();
-    }
-  } catch {
-    // Tous les systèmes de fichiers n'autorisent pas l'ouverture d'un répertoire.
-    // L'écriture reste atomique ; seule la durabilité est un peu moins garantie.
-  }
-}
-
+/** Persistance JSON sur disque. L'écriture elle-même vit dans `writeAtomic`. */
 export function createFileStorage(filePath: string): StoragePort {
   /**
    * Les écritures se suivent, elles ne se chevauchent jamais.
@@ -85,7 +48,9 @@ export function createFileStorage(filePath: string): StoragePort {
     },
 
     async write(value: unknown): Promise<void> {
-      const job = queue.then(() => writeOnce(filePath, value));
+      const job = queue.then(async () =>
+        writeAtomic(filePath, `${JSON.stringify(value, null, 2)}\n`)
+      );
       queue = job.catch(() => undefined);
       return job;
     },

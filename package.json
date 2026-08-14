@@ -23,7 +23,7 @@
     "commitlint": "commitlint --edit",
     "verify:guardrails": "bash scripts/verify-guardrails.sh",
     "setup:sandbox": "bash scripts/fix-sandbox.sh",
-    "pack:fetch": "python3 scripts/fetch-pack.py && npm run typecheck && node scripts/validate-pack.mjs",
+    "pack:fetch": "node scripts/pack-fetch.mjs && npm run typecheck && node scripts/validate-pack.mjs",
     "stop": "node scripts/stop.mjs",
     "watch": "node scripts/watch.mjs",
     "install:extension": "npm run build --workspace @perch/shell && node scripts/install-extension.mjs",

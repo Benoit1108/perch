@@ -125,10 +125,15 @@ jobs:
       - name: Construction de l'installeur
         run: npm run dist:win
 
-      # Une construction qui produit un fichier ne prouve rien : on lance l'application
-      # empaquetée et on exige qu'elle s'arrête d'elle-même, proprement.
-      - name: Test de fumée
+      # Une construction qui produit un fichier ne prouve rien. Deux vérifications : ce
+      # que le paquet CONTIENT, puis ce qu'il fait quand on le lance vraiment — seul
+      # moment où se voient un chemin qui n'a pas survécu à l'empaquetage ou un fusible
+      # qui refuse de charger l'archive.
+      - name: Contenu du paquet
         run: node scripts/smoke-packaged.mjs
+
+      - name: Démarrage du paquet
+        run: node scripts/smoke-launch.mjs
 
       - uses: actions/upload-artifact@v4
         with:
