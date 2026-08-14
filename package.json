@@ -32,8 +32,8 @@
     "health": "npm run format:check && npm run lint && npm run lint:length && npm run typecheck && npm run deps && npm run dead && npm run test",
     "clean": "tsc --build --clean",
     "audit": "node scripts/audit.mjs",
-    "dist:win": "npm run typecheck && npm run assets --workspace @perch/app && electron-builder --win --config electron-builder.yml",
-    "dist:linux": "npm run typecheck && npm run assets --workspace @perch/app && electron-builder --linux --config electron-builder.yml"
+    "dist:win": "npm run typecheck && npm run assets --workspace @perch/app && electron-builder --win --config electron-builder.yml --publish never",
+    "dist:linux": "npm run typecheck && npm run assets --workspace @perch/app && electron-builder --linux --config electron-builder.yml --publish never"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.2",

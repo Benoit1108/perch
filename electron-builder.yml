@@ -35,6 +35,11 @@ extraResources:
 # servent qu'à qui exécuterait du code dans le processus principal.
 afterPack: scripts/fuses.cjs
 
+# Rien n'est publie automatiquement. Sans cette ligne, electron-builder reconnait
+# l'integration continue et reclame un jeton GitHub pour deposer une release que
+# personne ne lui a demandee.
+publish: null
+
 win:
   target:
     - target: nsis
