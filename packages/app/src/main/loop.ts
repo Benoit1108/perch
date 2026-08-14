@@ -1,4 +1,4 @@
-import type { MotionConfig, Pet, Rect, SensorPort, Surface } from '@perch/core';
+import type { MotionConfig, Pet, Point, Rect, SensorPort, Surface } from '@perch/core';
 import { buildSurfaces, defaultMotionConfig, isFullscreen, step } from '@perch/core';
 
 import type { Voice } from './voice.js';
@@ -33,6 +33,62 @@ export interface LoopOptions {
 }
 
 /**
+ * Boucle auto-planifiée.
+ *
+ * `setInterval` avec un corps asynchrone empile les exécutions dès qu'une frame dépasse
+ * son budget, et la cadence s'effondre par à-coups. On replanifie donc après chaque
+ * passage plutôt qu'à intervalle fixe.
+ */
+function createTicker(intervalMs: number, body: () => Promise<void>): () => void {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let running = true;
+
+  const schedule = (): void => {
+    timer = setTimeout(() => {
+      void body()
+        .catch((error: unknown) => {
+          console.error('[perch] frame', error);
+        })
+        .finally(() => {
+          if (running) schedule();
+        });
+    }, intervalMs);
+  };
+  schedule();
+
+  return () => {
+    running = false;
+    if (timer !== null) clearTimeout(timer);
+  };
+}
+
+/**
+ * Suit le curseur SANS bloquer la frame.
+ *
+ * Le relevé passe par D-Bus : l'attendre à chaque passage ferait dépendre la cadence
+ * d'un aller-retour inter-processus, et la gigue deviendrait visible à l'écran.
+ */
+function createPointerFeed(sensors: SensorPort): () => Point | null {
+  let latest: Point | null = null;
+  let pending = false;
+
+  return () => {
+    if (!pending) {
+      pending = true;
+      void sensors
+        .pointer()
+        .then((value) => {
+          latest = value;
+        })
+        .finally(() => {
+          pending = false;
+        });
+    }
+    return latest;
+  };
+}
+
+/**
  * Boucle d'animation.
  *
  * Elle ne décide de rien : elle lit les capteurs, confie l'état à `core`, et transmet le
@@ -55,22 +111,30 @@ export function startLoop(options: LoopOptions): () => void {
     surfaces = buildSurfaces(monitors, windows);
     fullscreen = isFullscreen(monitors, windows);
 
-    // Premier placement : au milieu de la première surface venue, plutôt qu'en 0,0 qui
-    // peut se trouver dans une zone vide.
+    // Premier placement.
+    //
+    // Surtout PAS `surfaces[0]` : elles sont triées du haut vers le bas, et la première
+    // est donc le bord de la fenêtre la plus haute. Le compagnon s'y posait et n'avait
+    // aucune raison d'en bouger — il restait figé en haut de l'écran.
+    //
+    // On le lâche au-dessus d'un sol d'écran et on laisse la pesanteur faire le reste :
+    // elle sait déjà éviter les zones vides.
     if (!place) {
-      const first = surfaces[0];
-      if (first !== undefined) {
-        pet = { ...pet, x: (first.start + first.end) / 2, y: first.y };
+      const sol = surfaces.filter((surface) => surface.kind === 'ecran').at(-1) ?? surfaces[0];
+      if (sol !== undefined) {
+        pet = { ...pet, x: (sol.start + sol.end) / 2, y: sol.y - 1, state: 'chute' };
         place = true;
       }
     }
   };
 
+  const readPointer = createPointerFeed(sensors);
+
   const frame = async (): Promise<void> => {
     tick += 1;
     if (tick % GEOMETRY_EVERY === 1) await refreshGeometry();
 
-    const pointer = await sensors.pointer();
+    const pointer = readPointer();
     pet = step(pet, { surfaces, pointer, idleMs: 0 }, FRAME_MS, config);
 
     const now = tick * FRAME_MS;
@@ -99,13 +163,5 @@ export function startLoop(options: LoopOptions): () => void {
     });
   };
 
-  const timer = setInterval(() => {
-    void frame().catch((error: unknown) => {
-      console.error('[perch] frame', error);
-    });
-  }, FRAME_MS);
-
-  return () => {
-    clearInterval(timer);
-  };
+  return createTicker(FRAME_MS, frame);
 }

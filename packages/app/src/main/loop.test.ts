@@ -78,7 +78,7 @@ describe('startLoop', () => {
 
     const last = frames.at(-1);
     expect(last?.pet.x).toBeGreaterThan(960);
-    expect(last?.pet.state).toBe('suit');
+    expect(last?.pet.state).toBe('court');
   });
 
   it('reste au repos quand la position du curseur est inconnue', async () => {

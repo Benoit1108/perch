@@ -96,6 +96,31 @@ tenable : après un `parse`, le type est garanti à l'exécution.
   actif par défaut en `PERCH_DEBUG=1` : si les clics traversants cassent, c'est le seul
   recours qui ne dépende de rien.
 
+### Extension GNOME
+
+- **`disable-user-extensions` peut tout neutraliser en silence.** Ce réglage global
+  désactive TOUTES les extensions du dossier utilisateur quel que soit leur état
+  individuel, et `gnome-extensions enable` ne signale rien. Les extensions système
+  continuent de fonctionner, ce qui rend le diagnostic trompeur.
+  `gsettings get org.gnome.shell disable-user-extensions` — doit valoir `false`.
+- **Rien ne recharge le code d'une extension à chaud** (GNOME 50, Wayland). `disable`
+  puis `enable` ne relit pas le fichier : depuis GNOME 45 les extensions sont des modules
+  ESM et le module reste en cache. `org.gnome.Shell.Extensions.ReloadExtension` est
+  déclarée sur D-Bus mais répond « not implemented ». **Toute modification de
+  `packages/shell` exige une reconnexion de session** — en tenir compte dans le rythme de
+  travail, pas seulement dans la doc.
+- `npm run install:extension` copie et active, et signale ces deux pièges.
+
+### Rendu et fluidité
+
+- **Ne jamais attendre un appel D-Bus dans la boucle d'animation** : la cadence dépendrait
+  d'un aller-retour inter-processus et la gigue serait visible. Relever en tâche de fond,
+  simuler avec la dernière valeur connue.
+- **Pas de `setInterval` avec un corps asynchrone** : les exécutions s'empilent dès qu'une
+  frame dépasse son budget. Se replanifier après chaque passage.
+- **Le rendu interpole vers la position simulée.** Le moteur reste autoritaire ; l'affichage
+  la rejoint progressivement. Sans ça, la moindre irrégularité de cadence se voit.
+
 ### Outillage
 
 - **TypeScript est épinglé en `~6.0.3`** : `typescript-eslint` exige `<6.1.0`. TS 7 existe

@@ -1,5 +1,5 @@
 import type { Surface } from '../world/surfaces.js';
-import { groundBelow, isSupported } from '../world/surfaces.js';
+import { footholdAbove, groundBelow, isSupported } from '../world/surfaces.js';
 import type { MotionConfig, Pet, WorldView } from './pet.js';
 
 /** Tolérance verticale : en deçà, le compagnon est considéré posé sur la surface. */
@@ -74,11 +74,33 @@ function chase(pet: Pet, world: WorldView, dt: number, config: MotionConfig): Pe
   const { pointer } = world;
   if (pointer === null) return null;
 
+  // Le curseur est nettement plus haut : on cherche une prise et on grimpe. Sans ça, le
+  // compagnon ne sait que descendre — il tombe des fenêtres mais n'y remonte jamais, et
+  // « se percher au bord des fenêtres » reste une promesse.
+  if (pet.y - pointer.y > config.followDistance) {
+    const prise = footholdAbove(world.surfaces, pet.x, pet.y, config.climbReach);
+    if (prise !== null) {
+      return { ...pet, y: prise.y, vy: 0, state: 'escalade' };
+    }
+  }
+
   const delta = pointer.x - pet.x;
   if (Math.abs(delta) <= config.followDistance) return null;
 
+  // Marcher à allure unique rendait la poursuite interminable sur un grand écran : huit
+  // secondes pour traverser. On court quand le curseur est loin, on marche quand il est
+  // proche — c'est aussi ce qui donne l'impression d'un être vivant plutôt que d'un
+  // curseur retardé.
+  const distance = Math.abs(delta);
+  const speed = distance > config.runBeyond ? config.runSpeed : config.walkSpeed;
+
   const facing: 1 | -1 = delta > 0 ? 1 : -1;
-  return stride({ ...pet, facing }, world, config.walkSpeed * dt, 'suit');
+  return stride(
+    { ...pet, facing },
+    world,
+    speed * dt,
+    distance > config.runBeyond ? 'court' : 'suit'
+  );
 }
 
 /**

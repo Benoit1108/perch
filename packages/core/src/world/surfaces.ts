@@ -81,6 +81,33 @@ export function isSupported(surfaces: readonly Surface[], x: number, y: number):
 }
 
 /**
+ * Surface la plus basse située STRICTEMENT au-dessus de `y`, à portée, à l'abscisse `x`.
+ *
+ * C'est ce qui permet de se percher : sans elle, le compagnon ne sait que descendre — il
+ * tombe sur les surfaces plus basses mais ne remonte jamais sur une fenêtre.
+ *
+ * On retient la plus basse des candidates plutôt que la plus haute : on grimpe d'un cran,
+ * on ne se téléporte pas au sommet de la pile de fenêtres.
+ */
+export function footholdAbove(
+  surfaces: readonly Surface[],
+  x: number,
+  y: number,
+  reach: number
+): Surface | null {
+  let best: Surface | null = null;
+
+  for (const surface of surfaces) {
+    if (surface.y >= y) continue;
+    if (y - surface.y > reach) continue;
+    if (x < surface.start || x >= surface.end) continue;
+    if (best === null || surface.y > best.y) best = surface;
+  }
+
+  return best;
+}
+
+/**
  * Une fenêtre couvre-t-elle entièrement un écran ?
  *
  * Sert l'invariant I6 : le compagnon se tait et se cache en plein écran — visioconférence,

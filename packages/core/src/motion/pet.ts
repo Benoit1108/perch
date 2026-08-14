@@ -1,7 +1,8 @@
 import type { Point } from '../ports/geometry.js';
 import type { Surface } from '../world/surfaces.js';
 
-export type PetState = 'repos' | 'marche' | 'chute' | 'suit' | 'attrape' | 'sommeil';
+export type PetState =
+  'repos' | 'marche' | 'court' | 'escalade' | 'chute' | 'suit' | 'attrape' | 'sommeil';
 
 /** `x` et `y` désignent les PIEDS du compagnon, pas son coin haut-gauche. */
 export interface Pet {
@@ -23,22 +24,31 @@ export interface WorldView {
 }
 
 export interface MotionConfig {
-  /** Vitesse de marche, px/s. */
+  /** Vitesse de marche, px/s. Allure de croisière, près du curseur. */
   readonly walkSpeed: number;
+  /** Vitesse de course, px/s. Employée au-delà de `runBeyond`. */
+  readonly runSpeed: number;
+  /** Distance horizontale au-delà de laquelle le compagnon se met à courir. */
+  readonly runBeyond: number;
   /** Accélération de la pesanteur, px/s². */
   readonly gravity: number;
   /** Vitesse de chute maximale, px/s. Évite de traverser une surface en un pas. */
   readonly maxFallSpeed: number;
   /** Au-delà de cette distance horizontale, le compagnon se met à suivre le curseur. */
   readonly followDistance: number;
+  /** Hauteur maximale d'une marche franchissable. Au-delà, la surface est hors d'atteinte. */
+  readonly climbReach: number;
   /** Inactivité au-delà de laquelle il s'endort. */
   readonly sleepAfterMs: number;
 }
 
 export const defaultMotionConfig: MotionConfig = {
-  walkSpeed: 90,
+  walkSpeed: 140,
+  runSpeed: 420,
+  runBeyond: 320,
   gravity: 1400,
   maxFallSpeed: 1600,
   followDistance: 140,
+  climbReach: 260,
   sleepAfterMs: 120_000,
 };

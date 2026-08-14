@@ -95,11 +95,31 @@ describe('step — la règle anti-vide', () => {
 });
 
 describe('step — poursuite du curseur', () => {
-  it('avance vers un curseur éloigné', () => {
+  it('court vers un curseur éloigné', () => {
     const apres = step(pet({ x: 500 }), world({ pointer: { x: 1000, y: 1080 } }), 16, config);
-    expect(apres.state).toBe('suit');
+    expect(apres.state).toBe('court');
     expect(apres.x).toBeGreaterThan(500);
     expect(apres.facing).toBe(1);
+  });
+
+  it('marche quand le curseur est proche, court quand il est loin', () => {
+    const proche = step(
+      pet({ x: 500 }),
+      world({ pointer: { x: 500 + config.runBeyond - 10, y: 1080 } }),
+      16,
+      config
+    );
+    const loin = step(
+      pet({ x: 500 }),
+      world({ pointer: { x: 500 + config.runBeyond + 200, y: 1080 } }),
+      16,
+      config
+    );
+
+    expect(proche.state).toBe('suit');
+    expect(loin.state).toBe('court');
+    // La course couvre bien plus de terrain sur le même pas de temps.
+    expect(loin.x - 500).toBeGreaterThan(proche.x - 500);
   });
 
   it('se retourne pour un curseur situé à gauche', () => {
@@ -159,5 +179,59 @@ describe('nearestFoothold', () => {
     expect(point).not.toBeNull();
     expect(point?.x).toBe(0);
     expect(point?.y).toBe(1080);
+  });
+});
+
+describe('step — escalade', () => {
+  // Une fenêtre posée sur DP-3, dont le bord haut est à portée depuis le sol.
+  const avecFenetre = buildSurfaces([dp3], [{ x: 300, y: 900, width: 800, height: 180 }]);
+
+  it('grimpe sur le bord d’une fenêtre quand le curseur est au-dessus', () => {
+    const apres = step(
+      pet({ x: 500, y: 1080 }),
+      { surfaces: avecFenetre, pointer: { x: 500, y: 400 }, idleMs: 0 },
+      16,
+      config
+    );
+
+    expect(apres.state).toBe('escalade');
+    expect(apres.y).toBe(900);
+  });
+
+  it('ne grimpe pas vers une surface hors de portée', () => {
+    const tropHaut = buildSurfaces([dp3], [{ x: 300, y: 100, width: 800, height: 200 }]);
+    const apres = step(
+      pet({ x: 500, y: 1080 }),
+      { surfaces: tropHaut, pointer: { x: 500, y: 0 }, idleMs: 0 },
+      16,
+      config
+    );
+
+    expect(apres.state).not.toBe('escalade');
+    expect(apres.y).toBe(1080);
+  });
+
+  it('ne grimpe pas là où aucune fenêtre ne se trouve au-dessus', () => {
+    const apres = step(
+      pet({ x: 1500, y: 1080 }),
+      { surfaces: avecFenetre, pointer: { x: 1500, y: 300 }, idleMs: 0 },
+      16,
+      config
+    );
+
+    expect(apres.state).not.toBe('escalade');
+  });
+
+  it('redescend en tombant quand la fenêtre disparaît', () => {
+    let current = pet({ x: 500, y: 900, state: 'repos' });
+    for (let i = 0; i < 200 && current.y !== 1080; i++) {
+      current = step(
+        current,
+        { surfaces: buildSurfaces([dp3], []), pointer: null, idleMs: 0 },
+        16,
+        config
+      );
+    }
+    expect(current.y).toBe(1080);
   });
 });
