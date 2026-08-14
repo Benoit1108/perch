@@ -119,6 +119,12 @@ adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 
 ### Fixed
 
+- **L'application empaquetée mourait dès qu'on la lançait depuis un menu.** Sans personne
+  au bout de sa sortie standard, son premier message levait `EPIPE` et Electron la figeait
+  sur une boîte d'erreur. Le test de fumée coupe désormais la sortie exprès.
+- Configuration et état vivaient dans deux dossiers distincts (`~/.config/perch` et
+  `~/.config/@perch/app`). Un seul désormais.
+
 - **L'intégration continue était rouge depuis le 13 août** et personne ne l'avait vu : le
   fichier de verrouillage avait divergé après une réinstallation. Trois des quatre travaux
   échouaient avant même de commencer.

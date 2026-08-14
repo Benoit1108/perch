@@ -9,7 +9,7 @@
 //
 // L'application s'arrête d'elle-même grâce à `PERCH_TIMEOUT`. On exige un code de sortie
 // nul ET la ligne d'annonce, qui ne s'affiche qu'une fois l'état lu et les capteurs choisis.
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -29,6 +29,44 @@ function executable() {
     throw new Error(`aucun exécutable dans ${dossier} — cherché : ${candidats.join(', ')}`);
   }
   return trouve;
+}
+
+/**
+ * Lance l'application en coupant sa sortie standard aussitôt.
+ *
+ * C'est la situation d'un lanceur de bureau : le terminal parent se referme, plus personne
+ * ne lit. Le premier `console.log` levait alors `EPIPE`, Electron affichait sa boîte
+ * « A JavaScript error occurred in the main process », et le compagnon restait planté
+ * dessus indéfiniment. Le défaut est passé jusqu'à un vrai lancement, d'où cette épreuve.
+ */
+async function survitSansLecteur(binaire, drapeaux) {
+  const enfant = spawn(binaire, drapeaux, {
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: { ...process.env, PERCH_TIMEOUT: String(SECONDES) },
+  });
+
+  // On coupe le lecteur, pas le processus : c'est ce que fait un terminal qui se ferme.
+  enfant.stdout.destroy();
+  enfant.stderr.destroy();
+
+  const code = await new Promise((resolve) => {
+    const minuteur = setTimeout(
+      () => {
+        enfant.kill('SIGKILL');
+        resolve('bloquée');
+      },
+      (SECONDES + 30) * 1000
+    );
+
+    enfant.on('exit', (sortie) => {
+      clearTimeout(minuteur);
+      resolve(sortie);
+    });
+  });
+
+  if (code !== 0) {
+    throw new Error(`sortie coupée : l'application a fini en ${String(code)} au lieu de 0`);
+  }
 }
 
 try {
@@ -59,6 +97,9 @@ try {
 
   const annonce = /\[perch\] (.+) niveau \d+/u.exec(sortie);
   console.log(`Démarrage vérifié — ${annonce?.[1] ?? 'compagnon'} est en place.`);
+
+  await survitSansLecteur(binaire, drapeaux);
+  console.log('Sortie coupée : elle survit et s’arrête d’elle-même.');
 } catch (erreur) {
   console.error(`Lancement refusé : ${erreur instanceof Error ? erreur.message : String(erreur)}`);
   process.exit(1);

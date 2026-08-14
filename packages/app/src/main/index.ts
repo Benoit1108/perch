@@ -26,6 +26,7 @@ import type { Exchange } from './exchange.js';
 import { createExchange } from './exchange.js';
 import { createBox } from './box.js';
 import { installEscapeHatches } from './escape-hatches.js';
+import { survivePipeClosure } from './output.js';
 import { startLoop } from './loop.js';
 import type { Progression } from './progression.js';
 import { startCreature } from './runtime.js';
@@ -130,6 +131,10 @@ async function main(): Promise<void> {
   //
   // À faire AVANT toute lecture de chemin : `getPath('userData')` fige la réponse.
   app.setName('perch');
+
+  // AVANT le premier `console.log` : lancée depuis un lanceur de bureau, l'application
+  // n'a personne au bout de sa sortie standard, et le premier message la ferait tomber.
+  survivePipeClosure([process.stdout, process.stderr]);
 
   if (!claimSingleInstance()) return;
 

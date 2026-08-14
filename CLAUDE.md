@@ -155,6 +155,11 @@ tenable : après un `parse`, le type est garanti à l'exécution.
   Windows aux bords d'écran, et ce que l'extension GNOME apporte sur Linux.
 - **`--ozone-platform=x11` se choisit à l'exécution**, pas dans le script npm : il est
   indispensable sur Linux et dépourvu de sens ailleurs.
+- **Une application lancée depuis un menu n'a personne au bout de sa sortie standard.**
+  Le terminal parent se referme, le tube meurt, et le premier `console.log` lève `EPIPE` —
+  qui, non attrapé, affiche la boîte « A JavaScript error occurred in the main process » et
+  fige l'application dessus indéfiniment. `survivePipeClosure` s'installe AVANT le premier
+  message. Ce défaut ne se voit pas en développement, où quelqu'un lit toujours.
 - **Les chemins relatifs au dépôt ne survivent pas à l'empaquetage.** Les packs se cherchent
   dans le dossier de l'utilisateur, puis dans `process.resourcesPath`, puis dans le dépôt.
   L'AppImage démarrait sans visage alors que ses images étaient deux dossiers plus loin.
