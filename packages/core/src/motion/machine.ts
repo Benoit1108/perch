@@ -123,5 +123,8 @@ export function step(pet: Pet, world: WorldView, dtMs: number, config: MotionCon
   // Il vient de voler : avant de reprendre sa vie au sol, il doit rejoindre une surface.
   const landing = pet.mode === 'suit' ? land(tracked, world) : tracked;
 
-  return settled(landing, world, dt, config);
+  // Borné AUSSI une fois posé, et pas seulement en vol : une surface va jusqu'au bord de
+  // l'écran, si bien qu'en marchant il finissait la moitié du corps dehors. C'est ce qui
+  // le faisait paraître coupé le long des bordures.
+  return inside(settled(landing, world, dt, config), world.bounds, config);
 }

@@ -10,6 +10,8 @@ const mood = (overrides: Partial<Mood> = {}): Mood => ({
   idleMs: 0,
   dayKey: '2026-08-14',
   windows: [fenetre],
+  app: 'terminal',
+  tired: false,
   ...overrides,
 });
 
@@ -74,6 +76,36 @@ describe('moodFor', () => {
     const apres = mood({ windows: [fenetre, { ...fenetre, x: 950 }, { ...fenetre, x: 1500 }] });
 
     expect(moodFor(avant, apres)).toBeNull();
+  });
+
+  it('remarque une fenêtre réduite ou fermée', () => {
+    const avant = mood({ windows: [fenetre, { ...fenetre, x: 900 }] });
+    expect(moodFor(avant, mood({ windows: [fenetre] }))?.key).toBe('speech.windowGone');
+  });
+
+  it('remarque une fenêtre de plus', () => {
+    const apres = mood({ windows: [fenetre, { ...fenetre, x: 900 }] });
+    expect(moodFor(mood(), apres)?.key).toBe('speech.windowNew');
+  });
+
+  it('remarque un changement d’application', () => {
+    expect(moodFor(mood(), mood({ app: 'navigateur' }))?.key).toBe('speech.switched');
+  });
+
+  // Sans extension pour le dire, l'application vaut `null` : inventer un changement
+  // ferait parler le compagnon à chaque relevé.
+  it('n’invente pas de changement quand l’application est inconnue', () => {
+    expect(moodFor(mood({ app: null }), mood({ app: null }))).toBeNull();
+    expect(moodFor(mood({ app: null }), mood({ app: 'terminal' }))).toBeNull();
+  });
+
+  it('souffle quand il vient de s’arrêter', () => {
+    expect(moodFor(mood(), mood({ tired: true }))?.key).toBe('speech.tired');
+  });
+
+  it('savoure son perchoir en arrivant en haut', () => {
+    const avant = mood({ state: 'escalade' });
+    expect(moodFor(avant, mood({ state: 'marche' }))?.key).toBe('speech.perched');
   });
 
   // Registres : s'endormir est une humeur, s'étonner d'une absence n'est que du bavardage

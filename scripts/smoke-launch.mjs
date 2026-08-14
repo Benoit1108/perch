@@ -89,7 +89,13 @@ try {
     throw new Error(`code de sortie ${String(resultat.status)}\n${sortie.slice(-2000)}`);
   }
   if (!sortie.includes('[perch]')) {
-    throw new Error(`démarrage muet : aucune trace du processus principal\n${sortie.slice(-2000)}`);
+    // Une seule instance à la fois : lancée alors qu'une autre tourne, l'application sort
+    // aussitôt et sans un mot. Le diagnostic mérite d'être dit, il coûte sinon un quart
+    // d'heure de perplexité.
+    throw new Error(
+      `démarrage muet : aucune trace du processus principal.\n` +
+        `Une autre instance tourne peut-être déjà — la fermer, puis recommencer.\n${sortie.slice(-2000)}`
+    );
   }
   if (/aucun pack de creatures/u.test(sortie)) {
     throw new Error(`l'application installée ne trouve pas ses créatures\n${sortie.slice(-2000)}`);

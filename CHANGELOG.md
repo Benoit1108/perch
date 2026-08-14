@@ -119,6 +119,24 @@ adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 
 ### Fixed
 
+- **Le compagnon débordait des bords de l'écran**, coupé en deux. Deux causes : les
+  panneaux du bureau se dessinent au-dessus de toute fenêtre — il faut donc se borner à la
+  zone utile, pas à l'écran — et le bornage ne s'appliquait qu'au vol, alors qu'en marchant
+  il allait jusqu'au bord de la surface.
+- **Les clics ne passaient plus** : l'ordre des attributs d'overlay avait été inversé, et
+  chacun réinitialise la région d'entrée. La transparence aux clics se pose EN DERNIER.
+- Le rang « au-dessus » est réellement redemandé au gestionnaire de fenêtres, et non
+  reposé sur un attribut déjà présent.
+
+### Added
+
+- **Un harnais visuel** (`npm run visual`) : il monte le vrai overlay, promène un curseur
+  factice sur les bords et les coins, et capture ce que la fenêtre dessine. Trois
+  itérations de correctifs étaient parties dans le vide faute de pouvoir regarder.
+- Le compagnon réagit à ce qui se passe : fenêtre réduite ou ouverte, changement
+  d'application, changement de bureau, perchoir atteint, fatigue — et des remarques de fond
+  qui tournent, pour qu'il ne se répète pas.
+
 - **L'overlay volait les clics au lancement** : il fallait passer sur une autre application
   pour rendre la souris au bureau. Il s'affiche désormais sans prendre le focus.
 - **Le compagnon passait derrière les fenêtres.** Le rang « au-dessus » ne tient pas seul :

@@ -1,4 +1,5 @@
 import { BrowserWindow, screen } from 'electron';
+import type { NativeImage } from 'electron';
 import { fileURLToPath } from 'node:url';
 
 import type { Rect } from '@perch/core';
@@ -143,9 +144,21 @@ export class Overlay {
    * derrière le terminal, visible seulement là où aucune fenêtre ne le recouvrait.
    */
   private applyOverlayFlags(): void {
-    this.window.setIgnoreMouseEvents(true);
-    this.window.setAlwaysOnTop(true, 'screen-saver');
+    // L'ORDRE EST LA RÈGLE, et l'avoir inversé a coûté une itération entière : chacun de
+    // ces appels recrée des propriétés de la fenêtre X, ce qui RÉINITIALISE la région
+    // d'entrée. Poser la transparence aux clics en premier la faisait défaire aussitôt, et
+    // l'overlay redevenait opaque toutes les cinq secondes — plus aucun clic ne passait.
+    //
+    // La transparence aux clics se pose donc EN DERNIER, toujours.
     this.window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+
+    // `setAlwaysOnTop(true)` ne fait rien quand l'attribut est déjà posé : le gestionnaire
+    // de fenêtres, lui, a pu descendre la fenêtre entre-temps. `moveTop` le lui redemande
+    // vraiment.
+    this.window.setAlwaysOnTop(true, 'screen-saver');
+    this.window.moveTop();
+
+    this.window.setIgnoreMouseEvents(true);
   }
 
   /**
@@ -199,6 +212,17 @@ export class Overlay {
     // rechargement de page. Ce qu'on conserve décrit l'apparence, pas ce qui l'a amenée.
     this.retained.set(channel, keep);
     if (this.loaded) this.send(channel, payload);
+  }
+
+  /**
+   * Image de ce que la fenêtre dessine réellement.
+   *
+   * Le seul moyen de VOIR le compagnon depuis un script : la capture d'écran du bureau
+   * est refusée aux applications, et trois itérations de correctifs sont parties dans le
+   * vide faute de pouvoir regarder. Voir `scripts/visual-check.mjs`.
+   */
+  async capture(): Promise<NativeImage> {
+    return this.window.webContents.capturePage();
   }
 
   destroy(): void {

@@ -1,4 +1,4 @@
-import { app } from 'electron';
+import { app, screen } from 'electron';
 import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 
@@ -17,8 +17,8 @@ import { nullSensors } from '../sensors/null.js';
 import type { Environment } from '../platform.js';
 import { currentEnvironment } from '../platform.js';
 import { boxDirectory } from '../exchange/box.js';
-import type { Locale, PerchState } from '@perch/core';
-import { defaultEarnConfig, progressFor, resolveLocale } from '@perch/core';
+import type { Locale, PerchState, Rect } from '@perch/core';
+import { boundingBox, defaultEarnConfig, progressFor, resolveLocale } from '@perch/core';
 
 import { bootstrap } from './bootstrap.js';
 import type { Companion } from './creature.js';
@@ -91,6 +91,17 @@ function openExchange(env: Environment, packs: readonly DiscoveredPack[]): Excha
     newId: () => randomUUID().slice(0, 12),
     now: () => new Date().toISOString(),
   });
+}
+
+/**
+ * Zone du bureau réellement disponible, barres système exclues.
+ *
+ * `workArea` retranche ce que l'environnement se réserve — la barre du haut occupe les
+ * trente-deux premiers pixels sur cette machine. Ces panneaux se dessinent au-dessus de
+ * TOUTE fenêtre : s'y aventurer ne rend pas le compagnon invisible, il le coupe en deux.
+ */
+function workArea(): Rect | null {
+  return boundingBox(screen.getAllDisplays().map((display) => display.workArea));
 }
 
 /** Branche la fenêtre de réglages sur ce qu'elle pilote. */
@@ -190,6 +201,7 @@ async function main(): Promise<void> {
     // La MÊME source que l'expérience : le mode privé endort le compagnon pour de bon,
     // au lieu de le laisser gambader pendant qu'on ne mesure plus rien.
     activity,
+    workArea,
     // La concentration est une donnée du moteur d'expérience, pas de l'animation.
     isFocused: () => (progression.current().day?.focusMs ?? 0) >= defaultEarnConfig.focusAfterMs,
   });

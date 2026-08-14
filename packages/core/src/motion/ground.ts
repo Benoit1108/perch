@@ -91,7 +91,14 @@ function climb(pet: Pet, world: WorldView, dt: number, config: MotionConfig): Pe
  */
 function stride(pet: Pet, world: WorldView, distance: number, config: MotionConfig): Pet {
   const nextX = pet.x + distance * pet.facing;
-  const bloque = !isSupported(world.surfaces, nextX, pet.y);
+
+  // Le demi-tour tient compte de son ENCOMBREMENT, pas seulement de ses pieds : une
+  // surface va jusqu'au bord de l'écran, et s'arrêter aux pieds le laissait déborder de
+  // la moitié du corps. Il fait donc demi-tour un demi-corps avant la fin.
+  const marge = (config.bodyWidth / 2) * pet.facing;
+  const bloque =
+    !isSupported(world.surfaces, nextX, pet.y) ||
+    !isSupported(world.surfaces, nextX + marge, pet.y);
   const trajetFini = pet.legRemaining - distance <= 0;
 
   // Un trajet s'achève au bord de la surface OU après sa distance : c'est ce qui donne un
