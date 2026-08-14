@@ -42,5 +42,5 @@ export { defaultSpeechConfig, emptySpeech, pull, say } from './speech/scheduler.
 export { isFullscreen } from './world/surfaces.js';
 
 export type { MotionConfig, Pet } from './motion/pet.js';
-export { defaultMotionConfig } from './motion/pet.js';
+export { defaultMotionConfig, newPet } from './motion/pet.js';
 export { step } from './motion/machine.js';

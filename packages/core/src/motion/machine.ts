@@ -1,134 +1,99 @@
-import type { Surface } from '../world/surfaces.js';
-import { footholdAbove, groundBelow, isSupported } from '../world/surfaces.js';
+import type { Point } from '../ports/geometry.js';
+import { settled } from './ground.js';
 import type { MotionConfig, Pet, WorldView } from './pet.js';
 
-/** Tolérance verticale : en deçà, le compagnon est considéré posé sur la surface. */
-const CONTACT = 0.5;
+export { nearestFoothold } from './ground.js';
 
-function support(surfaces: readonly Surface[], x: number, y: number): Surface | null {
-  const found = groundBelow(surfaces, x, y);
-  return found !== null && found.y - y <= CONTACT ? found : null;
+/** Le curseur a-t-il bougé depuis la dernière observation ? */
+function moved(previous: Point | null, current: Point, epsilon: number): boolean {
+  if (previous === null) return true;
+  return Math.abs(current.x - previous.x) > epsilon || Math.abs(current.y - previous.y) > epsilon;
 }
 
 /**
- * Point marchable le plus proche.
+ * Vol libre vers le curseur.
  *
- * Filet de sécurité pour un compagnon qui se retrouverait hors de toute surface — ce qui
- * arrive quand un écran est débranché sous ses pieds. Sans lui, il tomberait indéfiniment
- * hors du bureau, définitivement perdu.
+ * Ni pesanteur ni surface : c'est le comportement PRINCIPAL, celui d'un compagnon qui
+ * vous rejoint où que vous soyez. Le rattrapage est proportionnel à la distance, ce qui
+ * donne de l'inertie — il accélère quand vous partez loin, ralentit en arrivant — et la
+ * vitesse reste plafonnée pour qu'il ne se téléporte jamais.
  */
-export function nearestFoothold(
-  surfaces: readonly Surface[],
-  x: number,
-  y: number
-): { readonly x: number; readonly y: number } | null {
-  let best: { x: number; y: number } | null = null;
-  let bestDistance = Number.POSITIVE_INFINITY;
+function fly(pet: Pet, pointer: Point, dt: number, config: MotionConfig): Pet {
+  const dx = pointer.x - pet.x;
+  const dy = pointer.y + config.flyOffset - pet.y;
 
-  for (const surface of surfaces) {
-    const clampedX = Math.min(Math.max(x, surface.start), surface.end - 1);
-    const distance = (clampedX - x) ** 2 + (surface.y - y) ** 2;
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      best = { x: clampedX, y: surface.y };
-    }
-  }
+  // Rattrapage exponentiel borné : `1 - e^(-k·dt)` reste stable quelle que soit la cadence,
+  // là où un simple `distance × facteur` dépendrait du nombre de frames par seconde.
+  const ease = 1 - Math.exp(-config.flyEase * dt);
+  const maxStep = config.flySpeed * dt;
+  const clamp = (value: number): number => Math.max(-maxStep, Math.min(maxStep, value));
 
-  return best;
+  const facing: 1 | -1 = Math.abs(dx) < 2 ? pet.facing : dx > 0 ? 1 : -1;
+
+  return {
+    ...pet,
+    x: pet.x + clamp(dx * ease),
+    y: pet.y + clamp(dy * ease),
+    vy: 0,
+    facing,
+    mode: 'suit',
+    state: 'suit',
+    climbTo: null,
+  };
 }
 
-function fall(pet: Pet, world: WorldView, dt: number, config: MotionConfig): Pet {
-  const vy = Math.min(pet.vy + config.gravity * dt, config.maxFallSpeed);
-  const nextY = pet.y + vy * dt;
-
-  const landing = groundBelow(world.surfaces, pet.x, pet.y);
-
-  if (landing === null) {
-    // Plus rien sous les pieds : un écran a probablement disparu. On rattrape.
-    const rescue = nearestFoothold(world.surfaces, pet.x, pet.y);
-    if (rescue === null) return { ...pet, vy: 0, state: 'repos' };
-    return { ...pet, x: rescue.x, y: rescue.y, vy: 0, state: 'repos' };
-  }
-
-  if (nextY >= landing.y) {
-    return { ...pet, y: landing.y, vy: 0, state: 'repos' };
-  }
-
-  return { ...pet, y: nextY, vy, state: 'chute' };
-}
-
-/** Avance horizontalement, en refusant tout pas qui mènerait au-dessus du vide. */
-function stride(pet: Pet, world: WorldView, distance: number, state: Pet['state']): Pet {
-  const nextX = pet.x + distance * pet.facing;
-
-  if (!isSupported(world.surfaces, nextX, pet.y)) {
-    // Demi-tour : mieux vaut faire les cent pas que tomber hors du bureau.
-    const facing: 1 | -1 = pet.facing === 1 ? -1 : 1;
-    return { ...pet, facing, state: 'repos' };
-  }
-
-  return { ...pet, x: nextX, state };
-}
-
-function chase(pet: Pet, world: WorldView, dt: number, config: MotionConfig): Pet | null {
+/**
+ * Suit l'immobilité du curseur et en déduit le mode.
+ *
+ * Le mode ne dépend PAS de l'inactivité système : bouger la souris sans rien cliquer doit
+ * suffire à le faire décoller. C'est le mouvement du curseur qui compte, pas l'activité.
+ */
+function updateMode(pet: Pet, world: WorldView, config: MotionConfig): Pet {
   const { pointer } = world;
-  if (pointer === null) return null;
 
-  // Le curseur est nettement plus haut : on cherche une prise et on grimpe. Sans ça, le
-  // compagnon ne sait que descendre — il tombe des fenêtres mais n'y remonte jamais, et
-  // « se percher au bord des fenêtres » reste une promesse.
-  if (pet.y - pointer.y > config.followDistance) {
-    const prise = footholdAbove(world.surfaces, pet.x, pet.y, config.climbReach);
-    if (prise !== null) {
-      return { ...pet, y: prise.y, vy: 0, state: 'escalade' };
-    }
+  // Sans position connue — Wayland sans extension — il n'y a rien à suivre : il se pose.
+  if (pointer === null) {
+    return { ...pet, mode: 'pose', stillSince: null };
   }
 
-  const delta = pointer.x - pet.x;
-  if (Math.abs(delta) <= config.followDistance) return null;
+  if (moved(pet.lastPointer, pointer, config.pointerEpsilon)) {
+    return { ...pet, mode: 'suit', lastPointer: pointer, stillSince: null };
+  }
 
-  // Marcher à allure unique rendait la poursuite interminable sur un grand écran : huit
-  // secondes pour traverser. On court quand le curseur est loin, on marche quand il est
-  // proche — c'est aussi ce qui donne l'impression d'un être vivant plutôt que d'un
-  // curseur retardé.
-  const distance = Math.abs(delta);
-  const speed = distance > config.runBeyond ? config.runSpeed : config.walkSpeed;
+  const since = pet.stillSince ?? world.nowMs;
+  const immobile = world.nowMs - since;
 
-  const facing: 1 | -1 = delta > 0 ? 1 : -1;
-  return stride(
-    { ...pet, facing },
-    world,
-    speed * dt,
-    distance > config.runBeyond ? 'court' : 'suit'
-  );
+  return {
+    ...pet,
+    mode: immobile >= config.settleAfterMs ? 'pose' : pet.mode,
+    lastPointer: pointer,
+    stillSince: since,
+  };
 }
 
 /**
  * Une itération du moteur. Fonction pure : mêmes entrées, même sortie.
  *
- * L'ordre des règles est délibéré. La saisie à la souris prime sur tout, la pesanteur
- * prime sur les intentions, et le sommeil ne coupe que ce qui reste.
+ * L'ordre est délibéré : la saisie à la souris prime sur tout, puis le mode arbitre entre
+ * vol libre et vie au sol.
  */
 export function step(pet: Pet, world: WorldView, dtMs: number, config: MotionConfig): Pet {
   if (pet.state === 'attrape') return pet;
 
   const dt = dtMs / 1000;
+  const tracked = updateMode(pet, world, config);
 
-  if (support(world.surfaces, pet.x, pet.y) === null) {
-    return fall(pet, world, dt, config);
+  if (tracked.mode === 'suit' && world.pointer !== null) {
+    return fly(tracked, world.pointer, dt, config);
   }
 
-  if (world.idleMs >= config.sleepAfterMs) {
-    return { ...pet, vy: 0, state: 'sommeil' };
-  }
+  // Il vient de voler : avant de reprendre sa vie au sol, il doit retrouver une surface.
+  const landing = pet.mode === 'suit' ? { ...tracked, state: 'chute' as const, vy: 0 } : tracked;
 
-  const chasing = chase(pet, world, dt, config);
-  if (chasing !== null) return chasing;
-
-  return { ...pet, vy: 0, state: 'repos' };
+  return settled(landing, world, dt, config);
 }
 
 /** Repose le compagnon après un lâcher : il reprend sa chute là où on l'a laissé. */
 export function release(pet: Pet): Pet {
-  return { ...pet, state: 'chute', vy: 0 };
+  return { ...pet, mode: 'pose', state: 'chute', vy: 0, climbTo: null };
 }

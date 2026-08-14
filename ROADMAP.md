@@ -145,7 +145,23 @@ une violation introduite volontairement (un `import` de `electron` dans `core`, 
 fichier de 220 lignes, un `any`) fait bien échouer la CI. Un garde-fou qu'on n'a pas
 vu échouer n'est pas un garde-fou.
 
-### S2 — Le corps ✅
+### S2 — Le corps ✅ (révisé le 2026-08-14)
+
+**Révision majeure après essai réel.** S2 avait livré un MARCHEUR : contraint aux
+surfaces, donc incapable d'être au milieu de l'écran, donc incapable de suivre la souris.
+Or « suit la souris » était dans la première demande, dans la première ligne de ce
+document, et dans la définition de fini de S0 — cochée. La perte n'avait pas été signalée.
+
+Le compagnon a désormais **deux modes** :
+
+- **`suit`** — la souris bouge, il la rejoint librement en 2D, sans pesanteur ni surface.
+  C'est le comportement principal, celui d'un compagnon.
+- **`pose`** — la souris s'arrête, il rejoint une surface et y vit sa vie : quelques
+  trajets, un changement de perchoir, une vraie pause dont la durée dépend de sa fatigue,
+  puis le sommeil.
+
+Tout le travail sur les surfaces, la pesanteur et l'escalade sert le mode posé. Il
+manquait le vol, et la bascule.
 
 **Objectif** : un pet qui se déplace de façon crédible, sans encore rien comprendre au jeu.
 

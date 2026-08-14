@@ -1,5 +1,5 @@
 import type { MotionConfig, Pet, Point, Rect, SensorPort, Surface } from '@perch/core';
-import { buildSurfaces, defaultMotionConfig, isFullscreen, step } from '@perch/core';
+import { buildSurfaces, defaultMotionConfig, isFullscreen, newPet, step } from '@perch/core';
 
 import type { Voice } from './voice.js';
 
@@ -98,7 +98,7 @@ export function startLoop(options: LoopOptions): () => void {
   const config = options.config ?? defaultMotionConfig;
   const { overlay, sensors, debug } = options;
 
-  let pet: Pet = { x: 0, y: 0, vy: 0, facing: 1, state: 'chute' };
+  let pet: Pet = newPet(0, 0);
   let surfaces: Surface[] = [];
   let tick = 0;
   let place = false;
@@ -122,7 +122,7 @@ export function startLoop(options: LoopOptions): () => void {
     if (!place) {
       const sol = surfaces.filter((surface) => surface.kind === 'ecran').at(-1) ?? surfaces[0];
       if (sol !== undefined) {
-        pet = { ...pet, x: (sol.start + sol.end) / 2, y: sol.y - 1, state: 'chute' };
+        pet = { ...pet, x: (sol.start + sol.end) / 2, y: sol.y - 1 };
         place = true;
       }
     }
@@ -135,7 +135,7 @@ export function startLoop(options: LoopOptions): () => void {
     if (tick % GEOMETRY_EVERY === 1) await refreshGeometry();
 
     const pointer = readPointer();
-    pet = step(pet, { surfaces, pointer, idleMs: 0 }, FRAME_MS, config);
+    pet = step(pet, { surfaces, pointer, idleMs: 0, nowMs: Date.now() }, FRAME_MS, config);
 
     const now = tick * FRAME_MS;
     if (tick % VOICE_EVERY === 0 && options.voice !== undefined) {

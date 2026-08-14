@@ -81,27 +81,31 @@ export function isSupported(surfaces: readonly Surface[], x: number, y: number):
 }
 
 /**
- * Surface la plus basse située STRICTEMENT au-dessus de `y`, à portée, à l'abscisse `x`.
+ * Surface la plus proche de la hauteur visée, parmi celles qui passent par `x`.
  *
- * C'est ce qui permet de se percher : sans elle, le compagnon ne sait que descendre — il
- * tombe sur les surfaces plus basses mais ne remonte jamais sur une fenêtre.
+ * C'est LA décision de perchage, et elle remplace deux règles opposées qui se
+ * déclenchaient l'une l'autre : « le curseur est au-dessus, je grimpe » et « le curseur
+ * est en dessous, je descends ». Un curseur à mi-hauteur satisfaisait les deux et le
+ * compagnon oscillait sans fin entre le sol et le sommet.
  *
- * On retient la plus basse des candidates plutôt que la plus haute : on grimpe d'un cran,
- * on ne se téléporte pas au sommet de la pile de fenêtres.
+ * Une seule question, une seule réponse : où dois-je me tenir ?
  */
-export function footholdAbove(
+export function bestPerch(
   surfaces: readonly Surface[],
   x: number,
-  y: number,
-  reach: number
+  targetY: number
 ): Surface | null {
   let best: Surface | null = null;
+  let bestDistance = Number.POSITIVE_INFINITY;
 
   for (const surface of surfaces) {
-    if (surface.y >= y) continue;
-    if (y - surface.y > reach) continue;
     if (x < surface.start || x >= surface.end) continue;
-    if (best === null || surface.y > best.y) best = surface;
+
+    const distance = Math.abs(surface.y - targetY);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = surface;
+    }
   }
 
   return best;

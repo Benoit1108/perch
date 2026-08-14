@@ -9,6 +9,15 @@ adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 
 ### Added
 
+- **Deux modes de comportement.** Le compagnon vole librement vers le curseur quand la
+  souris bouge, et se pose sur une surface quand elle s'arrête. La bascule entre les deux
+  fait sa personnalité.
+- Vie autonome rythmée en mode posé : trajets de longueur variable, changements de
+  perchoir de sa propre initiative, petits sauts, et vraies pauses dont la durée dépend de
+  la fatigue accumulée.
+- Escalade progressive et descente volontaire : il rejoint le bord d'une fenêtre
+  maximisée, et sait en redescendre.
+
 - **Sprint S5 — Personnalité.** Le compagnon parle, et surtout il sait se taire : une
   bulle par quart d'heure au maximum, silence total pendant la concentration et en plein
   écran, demandes périmées abandonnées.

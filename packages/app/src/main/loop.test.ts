@@ -60,9 +60,11 @@ describe('startLoop', () => {
     const last = frames.at(-1);
     expect(frames.length).toBeGreaterThan(0);
     expect(last?.surfaces).toHaveLength(1);
-    // Au milieu du sol : 0,0 pourrait se trouver dans une zone vide.
-    expect(last?.pet.x).toBeCloseTo(960, 0);
+    // Posé sur le sol, et non en 0,0 qui pourrait se trouver dans une zone vide. Son
+    // abscisse dérive : une fois posé, il se promène.
     expect(last?.pet.y).toBe(1080);
+    expect(last?.pet.x).toBeGreaterThan(0);
+    expect(last?.pet.x).toBeLessThan(1920);
   });
 
   it('suit le curseur quand les capteurs le fournissent', async () => {
@@ -78,17 +80,18 @@ describe('startLoop', () => {
 
     const last = frames.at(-1);
     expect(last?.pet.x).toBeGreaterThan(960);
-    expect(last?.pet.state).toBe('court');
+    expect(last?.pet.state).toBe('suit');
   });
 
-  it('reste au repos quand la position du curseur est inconnue', async () => {
+  it('se pose et vit sa vie quand la position du curseur est inconnue', async () => {
     const { sink, frames } = collector();
     const stop = startLoop({ overlay: sink, sensors: fakeSensors(null), debug: false });
 
     await vi.advanceTimersByTimeAsync(500);
     stop();
 
-    expect(frames.at(-1)?.pet.state).toBe('repos');
+    // Sans curseur à suivre — Wayland sans extension — il ne vole pas : il se promène.
+    expect(['repos', 'marche', 'chute']).toContain(frames.at(-1)?.pet.state);
   });
 
   it('cesse d’émettre après l’arrêt', async () => {
