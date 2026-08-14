@@ -120,6 +120,13 @@ tenable : après un `parse`, le type est garanti à l'exécution.
   frame dépasse son budget. Se replanifier après chaque passage.
 - **Le rendu interpole vers la position simulée.** Le moteur reste autoritaire ; l'affichage
   la rejoint progressivement. Sans ça, la moindre irrégularité de cadence se voit.
+- **Les trois attributs d'overlay se ré-appliquent ENSEMBLE et RÉGULIÈREMENT** : invisible
+  aux clics, au-dessus de tout, présent sur tous les bureaux. Un redimensionnement remet la
+  région d'entrée à zéro (constat S0 n°7) et le gestionnaire de fenêtres perd le rang
+  « au-dessus » au fil des ouvertures — le compagnon finit alors derrière le terminal.
+- **`showInactive()` et non `show()`** : une fenêtre qui s'ouvre au premier plan reçoit les
+  clics tant qu'elle garde le focus, quels que soient les réglages de transparence. Au
+  lancement, il fallait passer sur une autre application pour rendre la souris au bureau.
 - **Les images passent par IPC, encodées en `data:`.** La page du compagnon n'a aucun accès
   au disque — sa politique de sécurité n'autorise que `img-src data:` — et elle est
   toujours au premier plan. Elles voyagent par ÉVÉNEMENT (démarrage, choix, évolution),

@@ -13,6 +13,7 @@ import {
   buildSurfaces,
   defaultMotionConfig,
   isFullscreen,
+  WONDERING_MS,
   moodFor,
   newPet,
   step,
@@ -27,6 +28,15 @@ const GEOMETRY_EVERY = 15;
 const VOICE_EVERY = 60;
 /** Durée d'affichage d'une bulle. */
 const BUBBLE_MS = 5_000;
+/**
+ * Cadence des remarques ordinaires, en passages de voix (donc en secondes).
+ *
+ * Sans elles, le compagnon ne parlait qu'aux événements — montée de niveau, sommeil,
+ * changement de bureau — c'est-à-dire presque jamais. Une demande régulière suffit : c'est
+ * le cadenceur de parole qui décide s'il est convenable de la dire, et il écarte les
+ * demandes périmées.
+ */
+const CHATTER_EVERY = 4 * 60;
 
 /**
  * Tout ce dont la boucle a besoin de l'overlay.
@@ -152,12 +162,18 @@ function parle(
   options: LoopOptions,
   avant: Mood | null,
   maintenant: Mood,
-  fullscreen: boolean
+  fullscreen: boolean,
+  bavarde: boolean
 ): string | null {
   if (options.voice === undefined) return null;
 
   const humeur = moodFor(avant, maintenant);
   if (humeur !== null) options.voice.say(humeur);
+
+  // Une remarque de fond, réservée aux moments où quelqu'un est là pour la lire.
+  if (humeur === null && bavarde && maintenant.idleMs < WONDERING_MS) {
+    options.voice.say({ key: 'speech.chatter', register: 'bavardage' });
+  }
 
   return options.voice.pull({ focused: options.isFocused?.() ?? false, fullscreen });
 }
@@ -221,7 +237,7 @@ export function startLoop(options: LoopOptions): () => void {
     const now = tick * FRAME_MS;
     if (tick % VOICE_EVERY === 0) {
       const vu: Mood = { state: pet.state, idleMs, dayKey: today(), windows: fenetres };
-      const dit = parle(options, mood, vu, fullscreen);
+      const dit = parle(options, mood, vu, fullscreen, tick % (CHATTER_EVERY * 60) === 0);
       mood = vu;
 
       if (dit !== null) {

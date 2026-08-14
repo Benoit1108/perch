@@ -55,7 +55,7 @@ export { MESSAGE_KEYS, resolveLocale, translate } from './i18n/catalog.js';
 export type { SpeechConfig, SpeechRequest, SpeechState } from './speech/scheduler.js';
 export { defaultSpeechConfig, emptySpeech, pull, say } from './speech/scheduler.js';
 export type { Mood } from './speech/moods.js';
-export { moodFor } from './speech/moods.js';
+export { WONDERING_MS, moodFor } from './speech/moods.js';
 
 export { isFullscreen } from './world/surfaces.js';
 

@@ -2,8 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ActivityPort, Point, Rect, SensorPort } from '@perch/core';
 
+import { systemClock } from '../adapters/clock.js';
+
 import type { FrameSink } from './loop.js';
 import { startLoop } from './loop.js';
+import { Voice } from './voice.js';
 
 const dp3: Rect = { x: 0, y: 0, width: 1920, height: 1080 };
 
@@ -20,6 +23,7 @@ function fakeSensors(pointer: Point | null, monitors: readonly Rect[] = [dp3]): 
 interface Frame {
   readonly pet: { readonly x: number; readonly y: number; readonly state: string };
   readonly surfaces: readonly unknown[];
+  readonly bubble?: string | null;
 }
 
 function isFrame(value: unknown): value is Frame {
@@ -64,6 +68,27 @@ function fakeActivity(idleMs: number | null): ActivityPort {
  * et le défaut a vécu des semaines sans que rien ne le signale. Les états de sommeil sont
  * testés ailleurs — ce qui manquait, c'est la preuve que la valeur arrive jusqu'au moteur.
  */
+describe('startLoop — parole', () => {
+  // Le compagnon ne parlait qu'aux événements — montée de niveau, sommeil, changement de
+  // bureau — c'est-à-dire presque jamais sur une session ordinaire. Sans remarque de fond,
+  // tout le travail sur sa voix restait invisible.
+  it('finit par dire quelque chose même quand rien de notable n’arrive', async () => {
+    const { sink, frames } = collector();
+    const stop = startLoop({
+      overlay: sink,
+      sensors: fakeSensors(null),
+      debug: false,
+      voice: new Voice(() => 'fr', systemClock),
+      activity: fakeActivity(0),
+    });
+
+    await vi.advanceTimersByTimeAsync(5 * 60_000);
+    stop();
+
+    expect(frames.some((frame) => typeof frame.bubble === 'string')).toBe(true);
+  });
+});
+
 describe('startLoop — inactivité', () => {
   it('endort le compagnon quand la source rapporte une longue inactivité', async () => {
     const { sink, frames } = collector();

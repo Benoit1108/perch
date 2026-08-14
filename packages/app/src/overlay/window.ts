@@ -25,6 +25,7 @@ export class Overlay {
    */
   private readonly retained = new Map<string, unknown>();
   private loaded = false;
+  private readonly rang: ReturnType<typeof setInterval>;
 
   constructor() {
     this.bounds = this.desktopBounds();
@@ -37,6 +38,11 @@ export class Overlay {
       alwaysOnTop: true,
       skipTaskbar: true,
       focusable: false,
+      // Affichée SANS prendre le focus. Une fenêtre qui s'ouvre au premier plan reçoit les
+      // clics tant qu'elle le garde, quels que soient les réglages de transparence aux
+      // clics : au lancement, il fallait passer sur une autre application pour « rendre »
+      // la souris au bureau.
+      show: false,
       resizable: false,
       movable: false,
       fullscreenable: false,
@@ -49,9 +55,8 @@ export class Overlay {
       },
     });
 
-    this.applyClickThrough();
-    this.window.setAlwaysOnTop(true, 'screen-saver');
-    this.window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    this.applyOverlayFlags();
+    this.window.showInactive();
 
     this.window.webContents.on('did-finish-load', () => {
       // Rejoué à CHAQUE chargement, pas seulement au premier : une page qui tombe et se
@@ -63,16 +68,16 @@ export class Overlay {
 
       // Mutter écrête la taille à la CRÉATION : seule une reprise après affichage passe.
       //
-      // Les clics traversants sont ré-appliqués INCONDITIONNELLEMENT ici. L'appel fait
-      // dans le constructeur ne tient pas — la fenêtre n'est pas encore réalisée — et
-      // `syncBounds` sort tôt quand la géométrie n'a pas bougé. Sans cette ligne,
-      // l'overlay avale 100 % des clics du bureau (constat S0 n°7).
+      // Les attributs sont ré-appliqués INCONDITIONNELLEMENT ici. L'appel fait dans le
+      // constructeur ne tient pas — la fenêtre n'est pas encore réalisée — et `syncBounds`
+      // sort tôt quand la géométrie n'a pas bougé. Sans cette reprise, l'overlay avale
+      // 100 % des clics du bureau (constat S0 n°7).
       setTimeout(() => {
         this.syncBounds('apres affichage');
-        this.applyClickThrough();
+        this.applyOverlayFlags();
       }, 300);
       setTimeout(() => {
-        this.applyClickThrough();
+        this.applyOverlayFlags();
       }, 1200);
     });
 
@@ -99,6 +104,15 @@ export class Overlay {
       clearInterval(settle);
     }, 10_000);
 
+    // Le rang « au-dessus » ne tient pas tout seul : le gestionnaire de fenêtres le perd
+    // au fil des ouvertures et des changements de bureau, et le compagnon finit derrière
+    // le terminal. On le réaffirme donc régulièrement — un appel toutes les cinq secondes
+    // ne coûte rien, et `syncBounds` ne suffit pas puisqu'il sort tôt quand la géométrie
+    // n'a pas bougé.
+    this.rang = setInterval(() => {
+      if (!this.window.isDestroyed()) this.applyOverlayFlags();
+    }, 5_000);
+
     void this.window.loadFile(fileURLToPath(new URL('../renderer/overlay.html', import.meta.url)));
   }
 
@@ -119,14 +133,19 @@ export class Overlay {
   }
 
   /**
-   * Les clics doivent traverser l'overlay.
+   * Les trois attributs qui font un overlay : invisible aux clics, au-dessus de tout, et
+   * présent sur tous les bureaux.
    *
-   * À RÉ-APPLIQUER après chaque changement de géométrie : la région d'entrée est attachée
-   * à la fenêtre X et un redimensionnement la réinitialise. C'est ce qui, en S0, faisait
-   * avaler à l'overlay 100 % des clics du bureau.
+   * À RÉ-APPLIQUER ENSEMBLE après chaque changement de géométrie. La région d'entrée est
+   * attachée à la fenêtre X et un redimensionnement la réinitialise — c'est ce qui, en S0,
+   * faisait avaler à l'overlay 100 % des clics du bureau. Le gestionnaire de fenêtres perd
+   * de la même façon le rang « au-dessus », et le compagnon se retrouvait alors CACHÉ
+   * derrière le terminal, visible seulement là où aucune fenêtre ne le recouvrait.
    */
-  private applyClickThrough(): void {
+  private applyOverlayFlags(): void {
     this.window.setIgnoreMouseEvents(true);
+    this.window.setAlwaysOnTop(true, 'screen-saver');
+    this.window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   }
 
   /**
@@ -150,7 +169,7 @@ export class Overlay {
 
     this.bounds = next;
     this.window.setBounds(next);
-    this.applyClickThrough();
+    this.applyOverlayFlags();
 
     const after = this.window.getBounds();
     const geometrie = `${String(after.width)}x${String(after.height)}@${String(after.x)},${String(after.y)}`;
@@ -183,6 +202,7 @@ export class Overlay {
   }
 
   destroy(): void {
+    clearInterval(this.rang);
     if (!this.window.isDestroyed()) this.window.destroy();
   }
 }

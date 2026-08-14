@@ -119,6 +119,13 @@ adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 
 ### Fixed
 
+- **L'overlay volait les clics au lancement** : il fallait passer sur une autre application
+  pour rendre la souris au bureau. Il s'affiche désormais sans prendre le focus.
+- **Le compagnon passait derrière les fenêtres.** Le rang « au-dessus » ne tient pas seul :
+  il est réaffirmé régulièrement, avec les deux autres attributs d'overlay.
+- Le compagnon ne parlait qu'aux événements, donc presque jamais : il fait maintenant des
+  remarques de fond, que le cadenceur espace et que le silence en concentration retient.
+
 - **Le compagnon sortait de l'écran** en suivant un curseur près d'un bord, en haut comme
   en bas : rien ne le retenait pendant le vol.
 - **Il plongeait jusqu'au sol à chaque arrêt de la souris**, puis remontait vers un
