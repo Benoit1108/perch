@@ -16,7 +16,8 @@ adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 - **Windows et macOS deviennent atteignables** : le curseur et l'inactivité passent par les
   interfaces d'Electron, sans une ligne de code natif.
 - Installeurs `.exe` (NSIS) et AppImage, fusibles Electron verrouillés, créatures embarquées
-  dans le paquet.
+  dans le paquet. L'intégration continue construit le `.exe` **et le lance** : elle exige
+  qu'il démarre et trouve ses créatures avant de le publier comme artefact.
 - Les packs sont cherchés à trois endroits : dossier de l'utilisateur, ressources livrées,
   puis dépôt. Sans le deuxième, l'application installée démarrait sans visage alors que ses
   images étaient bien là.
