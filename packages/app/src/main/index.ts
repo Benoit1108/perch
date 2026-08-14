@@ -1,31 +1,34 @@
 import { app } from 'electron';
+import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import { detectActivity, withPrivacy } from '../activity/detect.js';
-import { configureChooser, openChooser } from '../chooser/window.js';
+import { openChooser } from '../chooser/window.js';
 import { readConfig } from '../config/repos.js';
 import { openSettings, registerSettingsIpc } from '../settings/window.js';
-import { snapshotSources } from '../sources/snapshot.js';
 import { systemClock } from '../adapters/clock.js';
 import { createFileStorage } from '../adapters/storage.js';
 import { Overlay } from '../overlay/window.js';
 import type { DiscoveredPack } from '../packs/discover.js';
-import { defaultsFrom, discoverPacksIn } from '../packs/discover.js';
+import { loadPacks } from '../packs/roots.js';
 import { resolveCreature } from '../packs/resolve.js';
 import { detectSensors } from '../sensors/detect.js';
 import { nullSensors } from '../sensors/null.js';
+import type { Environment } from '../platform.js';
 import { currentEnvironment } from '../platform.js';
-import type { ActivityPort, Locale, PerchState, StoragePort } from '@perch/core';
+import { boxDirectory } from '../exchange/box.js';
+import type { Locale, PerchState } from '@perch/core';
 import { defaultEarnConfig, progressFor, resolveLocale } from '@perch/core';
 
-import type { Defaults } from './bootstrap.js';
 import { bootstrap } from './bootstrap.js';
-import { createCompanion } from './creature.js';
+import type { Companion } from './creature.js';
+import type { Exchange } from './exchange.js';
+import { createExchange } from './exchange.js';
+import { createBox } from './box.js';
 import { installEscapeHatches } from './escape-hatches.js';
 import { startLoop } from './loop.js';
 import type { Progression } from './progression.js';
-import { startProgression } from './progression.js';
+import { startCreature } from './runtime.js';
 import { Voice } from './voice.js';
 
 /**
@@ -69,134 +72,44 @@ function reportRecovery(recovery: {
 }
 
 /**
- * Packs installés, avec le pack et la lignée de départ qu'on en déduit (invariant I9).
+ * La boîte d'échange, à l'emplacement conventionnel.
  *
- * Aucun pack n'est un cas NORMAL, pas une panne : le dépôt n'en contient aucun
- * (invariant I5) et `npm run pack:fetch` les fabrique. On démarre alors avec un compagnon
- * sans nom plutôt que de refuser de se lancer — un non-technicien ne doit pas se heurter
- * à un code de sortie parce qu'il manque des images.
+ * Elle ne vit dans le dossier d'aucune des deux applications : rangée chez l'une, elle
+ * disparaîtrait avec elle.
  */
-async function loadPacks(): Promise<{
-  packs: readonly DiscoveredPack[];
-  defaults: Defaults;
-}> {
-  // Trois emplacements, dans cet ordre de priorité :
-  //
-  //   1. le dossier de l'utilisateur, seul inscriptible après installation — c'est là
-  //      qu'atterrissent les packs téléchargés ou déposés à la main (invariant I5) ;
-  //   2. les ressources livrées avec l'application, que la construction y a placées ;
-  //   3. le dépôt, en développement seulement.
-  //
-  // Le troisième chemin ne veut plus rien dire une fois empaqueté : il pointait dans le
-  // point de montage de l'AppImage, et le compagnon démarrait sans visage alors que ses
-  // images étaient bien livrées, deux dossiers plus loin.
-  const roots = [
-    join(app.getPath('userData'), 'packs'),
-    join(process.resourcesPath, 'packs'),
-    fileURLToPath(new URL('../../../../packs', import.meta.url)),
-  ];
-
-  const packs = await discoverPacksIn(roots);
-  const defaults = defaultsFrom(packs);
-
-  if (defaults === null) {
-    console.warn(
-      `[perch] aucun pack de creatures dans ${roots.join(' ni ')} — lancer « npm run pack:fetch ».`
-    );
-    return { packs, defaults: { packId: '', lineId: '' } };
-  }
-  return { packs, defaults };
+function openExchange(env: Environment, packs: readonly DiscoveredPack[]): Exchange {
+  return createExchange({
+    packs,
+    directory: boxDirectory({
+      os: env.os,
+      home: app.getPath('home'),
+      xdgDataHome: process.env['XDG_DATA_HOME'],
+      appData: process.env['APPDATA'],
+    }),
+    appVersion: app.getVersion(),
+    newId: () => randomUUID().slice(0, 12),
+    now: () => new Date().toISOString(),
+  });
 }
 
-interface CreatureDeps {
-  readonly state: PerchState;
-  readonly packs: readonly DiscoveredPack[];
-  readonly overlay: Overlay;
-  readonly storage: StoragePort;
-  readonly activity: ActivityPort;
-  readonly voice: Voice;
-  readonly locale: () => Locale;
-  /** Premier lancement : on propose alors de choisir son compagnon. */
-  readonly fresh: boolean;
+/** Branche la fenêtre de réglages sur ce qu'elle pilote. */
+function wireSettings(
+  exchange: Exchange,
+  progression: Progression,
+  companion: Companion,
+  onChange: () => void
+): void {
+  registerSettingsIpc({
+    onChange,
+    onCompanion: () => {
+      openChooser();
+    },
+    box: createBox(exchange, progression, companion),
+  });
+
+  if (process.argv.includes('--settings')) openSettings();
 }
 
-/**
- * L'expérience et l'apparence, qui avancent ensemble.
- *
- * Les deux sont montées ici parce qu'elles se répondent : c'est une montée de niveau qui
- * déclenche une évolution, donc un changement d'apparence.
- */
-function startCreature(deps: CreatureDeps): Progression {
-  const companion = createCompanion({
-    packs: deps.packs,
-    sink: deps.overlay,
-    packId: deps.state.creature.packId,
-    lineId: deps.state.creature.lineId,
-  });
-
-  // Le niveau précédent est suivi ICI : `onLevelUp` ne rapporte que le niveau atteint, et
-  // une évolution se reconnaît au franchissement d'un palier, pas à un niveau isolé.
-  let level = deps.state.creature.level;
-
-  const progression = startProgression(deps.state, {
-    clock: systemClock,
-    activity: deps.activity,
-    storage: deps.storage,
-    sources: snapshotSources,
-    onLevelUp: (reached) => {
-      const evolution = companion.evolutionAt(level, reached);
-      level = reached;
-
-      if (evolution === null) {
-        deps.voice.say({
-          key: 'speech.levelUp',
-          register: 'evenement',
-          params: { level: reached },
-        });
-        return;
-      }
-      // Une évolution ÉCLIPSE la montée de niveau : deux bulles coup sur coup pour le
-      // même événement, c'est une de trop (invariant I6).
-      deps.voice.say({
-        key: 'speech.evolved',
-        register: 'evenement',
-        params: { name: evolution.name },
-      });
-      void companion.show(reached, true);
-    },
-    onQuestDone: () => {
-      deps.voice.say({ key: 'speech.questDone', register: 'evenement' });
-    },
-  });
-
-  void companion.show(level);
-
-  configureChooser({
-    locale: deps.locale,
-    choices: () => companion.choices(),
-    offers: (packId: string, lineId: string) => companion.offers(packId, lineId),
-    onPick: async (packId: string, lineId: string) => {
-      await progression.chooseCreature(packId, lineId);
-      await companion.choose(packId, lineId, progression.current().creature.level);
-    },
-  });
-
-  // Ouvert d'office au premier lancement SEULEMENT : on ne redemande jamais à quelqu'un
-  // qui a déjà un compagnon — les réglages sont là pour ça. Le choix arrive APRÈS le
-  // démarrage : l'état porte déjà une lignée par défaut, donc fermer la fenêtre sans rien
-  // choisir laisse un compagnon vivant plutôt qu'une application bloquée.
-  if (deps.fresh) openChooser();
-
-  return progression;
-}
-
-/**
- * Annonce ce qui est RÉELLEMENT affiché.
- *
- * L'état peut nommer un pack retiré depuis : `resolveCreature` se replie alors sur ce qui
- * existe, et afficher le nom stocké laisserait croire à une créature qu'on ne voit nulle
- * part.
- */
 function announce(state: PerchState, packs: readonly DiscoveredPack[], sensorName: string): void {
   const progress = progressFor(state.creature.xp);
   const { packId, lineId } = state.creature;
@@ -231,26 +144,19 @@ async function main(): Promise<void> {
   const sensors = await detectSensors(env);
 
   let config = await readConfig();
-  registerSettingsIpc(
-    () => {
-      void readConfig().then((fresh) => {
-        config = fresh;
-      });
-    },
-    () => {
-      openChooser();
-    }
-  );
+  const reloadConfig = (): void => {
+    void readConfig().then((fresh) => {
+      config = fresh;
+    });
+  };
 
   // Fonction et non valeur : `config` est remplacé à chaque enregistrement des réglages.
   const locale = (): Locale => resolveLocale(config.locale ?? app.getLocale());
   const voice = new Voice(locale, systemClock);
 
-  if (process.argv.includes('--settings')) openSettings();
-
   const activity = withPrivacy(await detectActivity(env), () => config.privateMode);
 
-  const progression = startCreature({
+  const { progression, companion } = startCreature({
     state,
     packs: installed.packs,
     overlay,
@@ -260,6 +166,8 @@ async function main(): Promise<void> {
     locale,
     fresh: recovery.kind === 'fresh',
   });
+
+  wireSettings(openExchange(env, installed.packs), progression, companion, reloadConfig);
 
   const stop = startLoop({
     overlay,

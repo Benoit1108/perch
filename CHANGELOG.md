@@ -9,6 +9,10 @@ adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 
 ### Added
 
+- **Boîte d'échange** avec les autres applications compagnon : un dossier neutre, une
+  enveloppe JSON versionnée, et un retrait atomique qui interdit qu'une créature soit prise
+  deux fois. Voir [docs/EXCHANGE.md](docs/EXCHANGE.md).
+
 - **Windows et macOS deviennent atteignables** : le curseur et l'inactivité passent par les
   interfaces d'Electron, sans une ligne de code natif.
 - Installeurs `.exe` (NSIS) et AppImage, fusibles Electron verrouillés, créatures embarquées

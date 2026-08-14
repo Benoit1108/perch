@@ -296,9 +296,28 @@ mensonge est pire qu'un aveu d'ignorance.
 
 ### S8 — Boîte d'échange
 
-- Format d'enveloppe JSON versionné, répertoire neutre
-- Dépôt / retrait, asynchrone, sans que l'autre app ait besoin de tourner
-- Intégration correspondante côté `claude-pokemon`
+Spécification complète : [docs/EXCHANGE.md](docs/EXCHANGE.md).
+
+- ✅ Enveloppe JSON versionnée, dossier neutre (`creature-box`), validée par schéma
+- ✅ Dépôt et retrait asynchrones, sans qu'aucune des deux applications ait à tourner
+- ✅ Retrait ATOMIQUE par renommage : deux applications qui retirent en même temps ne
+  peuvent pas obtenir la même créature
+- ✅ `species` (identifiant Showdown) porté par le manifeste de pack — seul vocabulaire
+  que les deux projets nomment pareil, et donc seul qui puisse voyager
+- ✅ Vérifié de bout en bout : une enveloppe écrite à la main, comme le ferait
+  `claude-pokemon`, est lue par `perch` à l'emplacement conventionnel
+
+**Deux gestes, aucun destructif** — un clic ne doit jamais faire disparaître des semaines
+de progression. Déposer envoie une copie ; adopter échange, le compagnon d'ici partant
+dans la boîte avant que l'autre n'arrive.
+
+**Le niveau voyage, l'expérience non** : seize millions de points valent le niveau 20 d'un
+côté, quelques milliers de l'autre.
+
+| Sujet                 | État                                                                                                                                                                                   |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Côté `claude-pokemon` | **Non fait.** Ce dépôt avait 87 fichiers non commités sur une branche en cours au moment d'écrire : y toucher aurait été imprudent. La spécification est écrite, l'implémentation non. |
+| Espèces communes      | Les deux packs sont volontairement disjoints : en pratique, une créature déposée d'un côté sera « inconnue » de l'autre tant qu'aucun pack ne les recouvre.                            |
 
 ### S9 — Publication
 

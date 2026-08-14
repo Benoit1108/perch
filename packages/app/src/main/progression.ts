@@ -6,7 +6,7 @@ import type {
   PerchState,
   StoragePort,
 } from '@perch/core';
-import { advanceState, defaultEarnConfig, noEvidence } from '@perch/core';
+import { advanceState, defaultEarnConfig, noEvidence, xpToReach } from '@perch/core';
 
 /** Ce que les sources branchées savent rapporter à un instant donné. */
 export interface SourceSnapshot {
@@ -45,6 +45,14 @@ export interface Progression {
    * vivant.
    */
   chooseCreature(packId: string, lineId: string): Promise<void>;
+  /**
+   * Accueille une créature venue d'une autre application.
+   *
+   * Le NIVEAU voyage avec elle, l'expérience non : les deux courbes n'ont rien de
+   * comparable. On repart donc du seuil du niveau reçu. Adopter peut faire descendre —
+   * c'est un échange, pas un cadeau.
+   */
+  adopt(packId: string, lineId: string, level: number): Promise<void>;
   stop(): void;
 }
 
@@ -104,6 +112,11 @@ export function startProgression(initial: PerchState, deps: ProgressionDeps): Pr
 
     chooseCreature: async (packId: string, lineId: string): Promise<void> => {
       state = { ...state, creature: { ...state.creature, packId, lineId } };
+      await deps.storage.write(state);
+    },
+
+    adopt: async (packId: string, lineId: string, level: number): Promise<void> => {
+      state = { ...state, creature: { packId, lineId, level, xp: xpToReach(level) } };
       await deps.storage.write(state);
     },
 

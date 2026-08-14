@@ -153,6 +153,9 @@ def construire(recette: dict, racine_sortie: Path, voulu: int) -> dict:
                 {
                     "id": stade["id"],
                     "name": stade["name"],
+                    # Vocabulaire partage avec les autres applications compagnon : c'est
+                    # par lui qu'une creature deposee ailleurs se reconnait ici.
+                    "species": espece,
                     "sprite": frames[0],
                     "fromLevel": stade["fromLevel"],
                     "clips": {"repos": {"frames": frames, "fps": fps}},

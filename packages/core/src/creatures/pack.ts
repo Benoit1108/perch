@@ -74,6 +74,24 @@ export function stageForLevel(line: CreatureLine, level: number): CreatureStage 
 }
 
 /**
+ * Retrouve où loger une espèce venue d'ailleurs.
+ *
+ * C'est ce qui permet à une créature déposée par une autre application d'être adoptée ici :
+ * l'enveloppe ne transporte qu'un identifiant d'espèce, et seul le manifeste sait à quelle
+ * lignée il correspond. Rien n'est écrit en dur (invariant I9).
+ */
+export function findSpecies(
+  pack: CreaturePack,
+  species: string
+): { readonly line: CreatureLine; readonly stage: CreatureStage } | undefined {
+  for (const line of pack.lines) {
+    const stage = line.stages.find((candidate) => candidate.species === species);
+    if (stage !== undefined) return { line, stage };
+  }
+  return undefined;
+}
+
+/**
  * Stade nouvellement atteint entre deux niveaux, ou `null` si l'apparence ne change pas.
  *
  * C'est ce qui distingue une montée de niveau ordinaire d'une ÉVOLUTION, le seul moment

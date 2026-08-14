@@ -1,4 +1,5 @@
 import { BrowserWindow, app, ipcMain } from 'electron';
+import { z } from 'zod';
 import { fileURLToPath } from 'node:url';
 
 import { MESSAGE_KEYS, resolveLocale, translate } from '@perch/core';
@@ -9,6 +10,9 @@ const CHANNEL_READ = 'settings:read';
 const CHANNEL_WRITE = 'settings:write';
 const CHANNEL_TEXTS = 'settings:texts';
 const CHANNEL_COMPANION = 'settings:companion';
+const CHANNEL_BOX = 'settings:box';
+const CHANNEL_DEPOSIT = 'settings:deposit';
+const CHANNEL_WITHDRAW = 'settings:withdraw';
 
 const PREFIXE = 'settings.';
 
@@ -67,6 +71,21 @@ async function texts(): Promise<Record<string, string>> {
   return out;
 }
 
+/** Ce dont la fenêtre de réglages a besoin du reste de l'application. */
+export interface SettingsDeps {
+  readonly onChange: () => void;
+  /** Ouvre la fenêtre de choix du compagnon. */
+  readonly onCompanion: () => void;
+  readonly box: {
+    list(): Promise<unknown>;
+    deposit(): Promise<unknown>;
+    withdraw(id: string): Promise<unknown>;
+  };
+}
+
+/** Identifiant d'enveloppe tel que le rendu le renvoie. Revérifié, comme tout le reste. */
+const IdSchema = z.string().min(1).max(64);
+
 /**
  * Branche les canaux IPC.
  *
@@ -74,7 +93,7 @@ async function texts(): Promise<Record<string, string>> {
  * est du code qui s'exécute dans un moteur web, et ce qui en vient n'a pas plus de
  * garanties que ce qui vient du disque.
  */
-export function registerSettingsIpc(onChange: () => void, onCompanion: () => void): void {
+export function registerSettingsIpc(deps: SettingsDeps): void {
   ipcMain.handle(CHANNEL_READ, async () => readConfig());
   ipcMain.handle(CHANNEL_TEXTS, async () => texts());
 
@@ -82,7 +101,15 @@ export function registerSettingsIpc(onChange: () => void, onCompanion: () => voi
   // fenêtre de choix ne s'ouvre qu'au tout premier lancement, et rien ne permettrait d'y
   // revenir ensuite.
   ipcMain.handle(CHANNEL_COMPANION, () => {
-    onCompanion();
+    deps.onCompanion();
+  });
+
+  ipcMain.handle(CHANNEL_BOX, async () => deps.box.list());
+  ipcMain.handle(CHANNEL_DEPOSIT, async () => deps.box.deposit());
+
+  ipcMain.handle(CHANNEL_WITHDRAW, async (_event, payload: unknown) => {
+    const parsed = IdSchema.safeParse(payload);
+    return parsed.success ? deps.box.withdraw(parsed.data) : { kind: 'partie' };
   });
 
   ipcMain.handle(CHANNEL_WRITE, async (_event, payload: unknown) => {
@@ -92,7 +119,7 @@ export function registerSettingsIpc(onChange: () => void, onCompanion: () => voi
     }
 
     await writeConfig(parsed.data);
-    onChange();
+    deps.onChange();
     return { ok: true };
   });
 }

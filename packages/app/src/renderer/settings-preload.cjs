@@ -10,4 +10,7 @@ contextBridge.exposeInMainWorld('perchSettings', {
   write: (config) => ipcRenderer.invoke('settings:write', config),
   texts: () => ipcRenderer.invoke('settings:texts'),
   chooseCompanion: () => ipcRenderer.invoke('settings:companion'),
+  box: () => ipcRenderer.invoke('settings:box'),
+  deposit: () => ipcRenderer.invoke('settings:deposit'),
+  withdraw: (id) => ipcRenderer.invoke('settings:withdraw', id),
 });

@@ -107,6 +107,63 @@
     }
   }
 
+  /** Une créature qui attend dans la boîte, et le bouton qui l'adopte. */
+  function attente(enveloppe) {
+    const item = document.createElement('li');
+    const quoi = `${enveloppe.creature.name} — niv. ${enveloppe.creature.level}`;
+    item.append(texteSimple(`${quoi} (${enveloppe.origin.app})`, 'chemin'));
+
+    const bouton = document.createElement('button');
+    bouton.type = 'button';
+    bouton.textContent = dire('withdraw');
+    bouton.addEventListener('click', () => {
+      void adopter(enveloppe.id);
+    });
+    item.append(bouton);
+
+    return item;
+  }
+
+  async function rendreBoite() {
+    const liste = par('boite');
+    const attentes = await window.perchSettings.box();
+
+    liste.replaceChildren();
+    if (attentes.length === 0) {
+      liste.append(vide(dire('boxEmpty')));
+      return;
+    }
+    liste.append(...attentes.map(attente));
+  }
+
+  /** Affiche un message le temps qu'on le lise, puis s'efface. */
+  function annoncer(message) {
+    par('etat').textContent = message;
+    setTimeout(() => {
+      par('etat').textContent = '';
+    }, ETAT_MS);
+  }
+
+  async function adopter(id) {
+    const issue = await window.perchSettings.withdraw(id);
+    const messages = {
+      adoptee: () => dire('adopted', { level: issue.level }),
+      inconnue: () => dire('unknownSpecies', { species: issue.species }),
+      partie: () => dire('gone'),
+    };
+
+    annoncer((messages[issue.kind] ?? (() => ''))());
+    await rendreBoite();
+  }
+
+  async function deposer() {
+    const issue = await window.perchSettings.deposit();
+    annoncer(
+      issue.kind === 'depose' ? dire('depositDone', { name: issue.name }) : dire('depositRefused')
+    );
+    await rendreBoite();
+  }
+
   function rendre() {
     par('locale').value = config.locale ?? '';
     par('prive').checked = config.privateMode;
@@ -118,13 +175,7 @@
     rendre();
     const reponse = await window.perchSettings.write(config);
 
-    par('etat').textContent = reponse.ok
-      ? dire('saved')
-      : dire('refused', { reason: reponse.error });
-
-    setTimeout(() => {
-      par('etat').textContent = '';
-    }, ETAT_MS);
+    annoncer(reponse.ok ? dire('saved') : dire('refused', { reason: reponse.error }));
   }
 
   function ajouterTache() {
@@ -147,6 +198,9 @@
   });
 
   par('ajouter').addEventListener('click', ajouterTache);
+  par('deposer').addEventListener('click', () => {
+    void deposer();
+  });
   par('locale').addEventListener('change', (event) => {
     config.locale = event.target.value === '' ? null : event.target.value;
     // Les libellés sont retraduits sur-le-champ : changer de langue dans une fenêtre qui
@@ -167,5 +221,6 @@
   void (async () => {
     config = await window.perchSettings.read();
     await recharger();
+    await rendreBoite();
   })();
 })();

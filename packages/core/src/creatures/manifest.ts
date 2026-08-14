@@ -52,6 +52,12 @@ const ClipsSchema = z.object({
 const CreatureStageSchema = z.object({
   id: identifier,
   name: z.string().min(1),
+  /**
+   * Identifiant d'espèce dans le vocabulaire partagé avec les autres applications
+   * compagnon — celui des sprites Showdown. Facultatif : un pack entièrement original n'a
+   * personne avec qui échanger, et n'a donc rien à déclarer ici.
+   */
+  species: identifier.optional(),
   /** Image fixe, pour le choix du compagnon. Jamais committée (invariant I5). */
   sprite: assetPath,
   /** Niveau à partir duquel ce stade est atteint. Le premier stade vaut toujours 1. */

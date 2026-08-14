@@ -22,7 +22,13 @@ export type {
   CreaturePack,
   CreatureStage,
 } from './creatures/manifest.js';
-export { evolutionBetween, findLine, parseCreaturePack, stageForLevel } from './creatures/pack.js';
+export {
+  evolutionBetween,
+  findLine,
+  findSpecies,
+  parseCreaturePack,
+  stageForLevel,
+} from './creatures/pack.js';
 export { PLAYBACK } from './creatures/clips.js';
 
 export type { PerchState } from './state/schema.js';
@@ -35,7 +41,7 @@ export type { ActivityPort } from './ports/activity.js';
 
 export type { EarnConfig } from './xp/earn.js';
 export { defaultEarnConfig } from './xp/earn.js';
-export { progressFor } from './xp/curve.js';
+export { progressFor, xpToReach } from './xp/curve.js';
 export { advanceState } from './xp/progression.js';
 export type { Evidence } from './quests/evidence.js';
 export { noEvidence } from './quests/evidence.js';
