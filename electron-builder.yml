@@ -1,0 +1,64 @@
+# Fabrication des installeurs.
+#
+# La configuration vit à la RACINE et non dans `packages/app` : le projet est un ensemble
+# d'espaces de travail npm, et `@perch/core` n'existe dans `node_modules` que sous forme de
+# lien symbolique. electron-builder doit voir la racine pour le suivre.
+appId: dev.perch.companion
+productName: Perch
+copyright: Perch
+# Sans cela, le binaire Linux hérite du nom du paquet npm et s'appelle « @perchapp ».
+executableName: perch
+
+directories:
+  app: packages/app
+  output: release
+  buildResources: build
+
+# Uniquement le compilé et les ressources des pages : ni sources TypeScript, ni tests.
+files:
+  - dist/**/*
+  - package.json
+
+# Les créatures voyagent HORS de l'archive, dans `resources/packs`.
+#
+# L'invariant I5 interdit de COMMITTER des sprites, pas d'en distribuer : le dépôt ne
+# contient que la recette et le script qui va les chercher, et c'est la construction qui
+# fabrique le pack juste avant d'empaqueter. Sans cela, un non-technicien installerait une
+# application au compagnon sans visage, sans le moindre moyen d'y remédier.
+extraResources:
+  - from: packs
+    to: packs
+    filter:
+      - '**/*'
+
+# `afterPack` retire des capacités d'Electron dont l'application n'a aucun usage : elles ne
+# servent qu'à qui exécuterait du code dans le processus principal.
+afterPack: scripts/fuses.cjs
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  # Pas de signature : sans certificat, SmartScreen avertira au premier lancement. C'est
+  # une dépense à décider, pas un oubli.
+
+nsis:
+  # Installeur qui POSE une question plutôt qu'un clic unique irréversible : l'utilisateur
+  # choisit où installer, et peut désinstaller proprement.
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+
+linux:
+  target:
+    - AppImage
+  category: Utility
+  # Sans lui, l'environnement de bureau ne rattache pas la fenêtre à son lanceur.
+  desktopName: perch
+  synopsis: Compagnon pixelisé qui vit sur le bureau
+  # `--ozone-platform=x11` est indispensable sous Wayland : sans lui, la fenêtre existe,
+  # GNOME la liste, et personne ne la voit. Voir `packages/app/scripts/start.mjs`.
+  executableArgs:
+    - --ozone-platform=x11

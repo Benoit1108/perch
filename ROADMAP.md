@@ -269,10 +269,30 @@ valider. C'est visible et assumé, pas silencieux.
 
 ### S7 — Windows
 
-- Adaptateurs Win32 : `GetLastInputInfo`, `EnumWindows`, `GetCursorPos`
-- Fenêtre transparente et clics traversants côté Windows
-- Packaging `.exe` (NSIS via electron-builder) + `@electron/fuses`
-- **Premier test réel avec un utilisateur non-dev** — le vrai juge du projet
+**Deux des trois appels Win32 prévus n'ont pas eu à être écrits.** Mesuré le 2026-08-14 :
+`screen.getCursorScreenPoint()` et `powerMonitor.getSystemIdleTime()` font exactement le
+travail de `GetCursorPos` et `GetLastInputInfo`, sur Windows comme sur macOS et sur une
+vraie session X11. La même mesure explique enfin POURQUOI Linux a besoin de l'extension :
+sous XWayland ces deux interfaces mentent — curseur figé, inactivité toujours nulle — et un
+mensonge est pire qu'un aveu d'ignorance.
+
+- ✅ Adaptateurs Electron pour le curseur et l'inactivité, choix de plateforme pur et testé
+- ✅ Lancement portable : `--ozone-platform=x11` n'est plus écrit en dur
+- ✅ Packaging `.exe` (NSIS) + `@electron/fuses`, vérifié de bout en bout **sur Linux** :
+  l'AppImage construite trouve ses créatures et démarre
+- ✅ Les créatures voyagent dans l'installeur, fabriquées par la construction. I5 interdit
+  de les COMMITTER, pas de les distribuer — sans cela un non-technicien installerait un
+  compagnon sans visage
+
+**Ce qui reste, et pourquoi.**
+
+| Sujet                  | État                                                                                                                                                                                                          |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Construction Windows   | Jamais exécutée : cette machine est sous Linux. Un exécuteur `windows-latest` la fait tourner en intégration continue, avec vérification du paquet produit. **Personne n'a encore lancé le `.exe`.**          |
+| Géométrie des fenêtres | Aucune interface d'Electron ne l'expose. Sur Windows le compagnon suit la souris et vit sur les bords d'écran, mais ne se perche pas sur les fenêtres — il faudrait un `EnumWindows` natif, non testable ici. |
+| Icône et signature     | L'installeur porte l'icône Electron par défaut et n'est pas signé : SmartScreen avertira. Ce sont une décision de design et une dépense, pas des oublis.                                                      |
+| Test avec un non-dev   | **Le vrai juge du projet, et il n'a pas encore rendu son verdict.**                                                                                                                                           |
+| Sortir de `dbus-next`  | Dix avis de sécurité sans correctif amont pendent à cette dépendance, dont trois critiques. Ils sont acceptés nommément par `npm run audit`, avec réexamen avant le 2026-11-14.                               |
 
 ### S8 — Boîte d'échange
 

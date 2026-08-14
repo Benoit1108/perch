@@ -93,4 +93,45 @@ jobs:
           cache: npm
 
       - run: npm ci
-      - run: npm audit --audit-level=high
+
+      # Pas `npm audit --audit-level=high` directement : il echouait en permanence sur des
+      # avis sans correctif amont, ce qui apprend a ignorer la porte. Le script accepte une
+      # liste nommee et justifiee, et refuse tout le reste.
+      - name: Vulnérabilités
+        run: npm run audit
+
+  windows:
+    name: Construction Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # Le pack de créatures est fabriqué ICI, jamais committé (invariant I5). Sans lui,
+      # l'installeur livrerait un compagnon sans visage — ce qu'un non-technicien ne
+      # saurait pas réparer.
+      - name: Pillow, pour découper les images
+        run: python -m pip install --disable-pip-version-check Pillow
+
+      - name: Fabrication du pack
+        run: npm run pack:fetch
+
+      - name: Construction de l'installeur
+        run: npm run dist:win
+
+      # Une construction qui produit un fichier ne prouve rien : on lance l'application
+      # empaquetée et on exige qu'elle s'arrête d'elle-même, proprement.
+      - name: Test de fumée
+        run: node scripts/smoke-packaged.mjs
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: perch-windows
+          path: release/*.exe
+          if-no-files-found: error

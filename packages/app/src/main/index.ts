@@ -1,4 +1,5 @@
-import { app, screen } from 'electron';
+import { app } from 'electron';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { detectActivity, withPrivacy } from '../activity/detect.js';
@@ -10,10 +11,11 @@ import { systemClock } from '../adapters/clock.js';
 import { createFileStorage } from '../adapters/storage.js';
 import { Overlay } from '../overlay/window.js';
 import type { DiscoveredPack } from '../packs/discover.js';
-import { defaultsFrom, discoverPacks } from '../packs/discover.js';
+import { defaultsFrom, discoverPacksIn } from '../packs/discover.js';
 import { resolveCreature } from '../packs/resolve.js';
 import { detectSensors } from '../sensors/detect.js';
 import { nullSensors } from '../sensors/null.js';
+import { currentEnvironment } from '../platform.js';
 import type { ActivityPort, Locale, PerchState, StoragePort } from '@perch/core';
 import { defaultEarnConfig, progressFor, resolveLocale } from '@perch/core';
 
@@ -78,13 +80,28 @@ async function loadPacks(): Promise<{
   packs: readonly DiscoveredPack[];
   defaults: Defaults;
 }> {
-  const packsRoot = fileURLToPath(new URL('../../../../packs', import.meta.url));
-  const packs = await discoverPacks(packsRoot);
+  // Trois emplacements, dans cet ordre de priorité :
+  //
+  //   1. le dossier de l'utilisateur, seul inscriptible après installation — c'est là
+  //      qu'atterrissent les packs téléchargés ou déposés à la main (invariant I5) ;
+  //   2. les ressources livrées avec l'application, que la construction y a placées ;
+  //   3. le dépôt, en développement seulement.
+  //
+  // Le troisième chemin ne veut plus rien dire une fois empaqueté : il pointait dans le
+  // point de montage de l'AppImage, et le compagnon démarrait sans visage alors que ses
+  // images étaient bien livrées, deux dossiers plus loin.
+  const roots = [
+    join(app.getPath('userData'), 'packs'),
+    join(process.resourcesPath, 'packs'),
+    fileURLToPath(new URL('../../../../packs', import.meta.url)),
+  ];
+
+  const packs = await discoverPacksIn(roots);
   const defaults = defaultsFrom(packs);
 
   if (defaults === null) {
     console.warn(
-      `[perch] aucun pack de creatures dans ${packsRoot} — lancer « npm run pack:fetch ».`
+      `[perch] aucun pack de creatures dans ${roots.join(' ni ')} — lancer « npm run pack:fetch ».`
     );
     return { packs, defaults: { packId: '', lineId: '' } };
   }
@@ -200,7 +217,7 @@ async function main(): Promise<void> {
 
   const installed = await loadPacks();
 
-  const statePath = `${app.getPath('userData')}/state.json`;
+  const statePath = join(app.getPath('userData'), 'state.json');
   const storage = createFileStorage(statePath);
   const { state, recovery } = await bootstrap(
     { clock: systemClock, storage, sensors: nullSensors },
@@ -210,9 +227,8 @@ async function main(): Promise<void> {
   reportRecovery(recovery);
 
   const overlay = new Overlay();
-  const sensors = await detectSensors({
-    monitors: () => screen.getAllDisplays().map((display) => display.bounds),
-  });
+  const env = currentEnvironment();
+  const sensors = await detectSensors(env);
 
   let config = await readConfig();
   registerSettingsIpc(
@@ -232,7 +248,7 @@ async function main(): Promise<void> {
 
   if (process.argv.includes('--settings')) openSettings();
 
-  const activity = withPrivacy(await detectActivity(), () => config.privateMode);
+  const activity = withPrivacy(await detectActivity(env), () => config.privateMode);
 
   const progression = startCreature({
     state,

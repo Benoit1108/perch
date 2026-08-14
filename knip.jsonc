@@ -16,6 +16,18 @@
   "ignoreExportsUsedInFile": true,
 
   "workspaces": {
+    ".": {
+      // `electron-builder.yml` désigne ce hook par son chemin, dans un YAML : aucun outil
+      // ne suit cette référence-là. Sans cette ligne, le fichier passe pour mort et la
+      // dépendance qu'il utilise pour inutile.
+      "entry": ["scripts/fuses.cjs"],
+
+      // Son export est appelé par electron-builder, jamais par notre code. Le compter
+      // comme inutilisé serait un faux positif — même raison que pour l'extension GNOME.
+      // La règle reste active là où elle protège vraiment : le baril de `core`.
+      "includeEntryExports": false,
+    },
+
     "packages/app": {
       // Les scripts des pages de rendu sont atteints par une balise `<script src>`, que
       // knip ne suit pas : sans cette déclaration, ils passent pour des fichiers morts.

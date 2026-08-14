@@ -9,6 +9,14 @@ adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 
 ### Added
 
+- **Windows et macOS deviennent atteignables** : le curseur et l'inactivité passent par les
+  interfaces d'Electron, sans une ligne de code natif.
+- Installeurs `.exe` (NSIS) et AppImage, fusibles Electron verrouillés, créatures embarquées
+  dans le paquet.
+- Les packs sont cherchés à trois endroits : dossier de l'utilisateur, ressources livrées,
+  puis dépôt. Sans le deuxième, l'application installée démarrait sans visage alors que ses
+  images étaient bien là.
+
 - **De vraies créatures, animées.** Six lignées, quatorze stades, sur le thème de ce qui
   se perche. Les images sont téléchargées puis converties par `npm run pack:fetch` — le
   dépôt n'en contient aucune.
@@ -105,6 +113,13 @@ adhère au [versionnage sémantique](https://semver.org/lang/fr/).
   la fenêtre de réglages, celle du choix, et les bulles du compagnon.
 
 ### Fixed
+
+- **L'intégration continue était rouge depuis le 13 août** et personne ne l'avait vu : le
+  fichier de verrouillage avait divergé après une réinstallation. Trois des quatre travaux
+  échouaient avant même de commencer.
+- La porte de vulnérabilités échouait en permanence sur des avis sans correctif amont — une
+  porte toujours rouge n'est plus une porte. Les exceptions sont désormais nommées,
+  justifiées, et périment d'elles-mêmes.
 
 - **Le compagnon ne pouvait pas dormir.** La boucle transmettait une inactivité toujours
   nulle au moteur : l'état de sommeil, son animation ralentie et son bâillement étaient

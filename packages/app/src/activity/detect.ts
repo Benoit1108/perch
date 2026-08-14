@@ -1,5 +1,9 @@
 import type { ActivityPort } from '@perch/core';
 
+import type { Environment } from '../platform.js';
+import { electronSeesDesktop } from '../platform.js';
+
+import { createElectronActivity } from './electron.js';
 import { createGnomeActivity } from './gnome.js';
 
 /**
@@ -35,15 +39,29 @@ export function withPrivacy(sensors: ActivityPort, isPrivate: () => boolean): Ac
  *
  * Le moniteur d'inactivité appartient à GNOME, pas à notre extension : la progression
  * fonctionne donc même sans elle. Seul le bonus de concentration en dépend.
+ *
+ * Electron prend le relais partout ailleurs — Windows, macOS, X11 — et c'est ce qui évite
+ * d'écrire `GetLastInputInfo` à la main. Sous Wayland en revanche il répond toujours zéro,
+ * ce qui accorderait de l'expérience à une machine abandonnée : mieux vaut alors avouer
+ * qu'on ne sait pas.
  */
-export async function detectActivity(): Promise<ActivityPort> {
-  try {
-    const gnome = await createGnomeActivity();
-    console.log('[perch] activite : org.gnome.Mutter.IdleMonitor');
-    return gnome;
-  } catch (error: unknown) {
-    const reason = error instanceof Error ? error.message : String(error);
-    console.warn(`[perch] aucune source d'activite (${reason}) — la creature ne progressera pas.`);
-    return noActivity;
+export async function detectActivity(env: Environment): Promise<ActivityPort> {
+  if (env.os === 'linux') {
+    try {
+      const gnome = await createGnomeActivity();
+      console.log('[perch] activite : org.gnome.Mutter.IdleMonitor');
+      return gnome;
+    } catch (error: unknown) {
+      const reason = error instanceof Error ? error.message : String(error);
+      console.log(`[perch] moniteur GNOME indisponible — ${reason}`);
+    }
   }
+
+  if (electronSeesDesktop(env)) {
+    console.log('[perch] activite : Electron (getSystemIdleTime)');
+    return createElectronActivity();
+  }
+
+  console.warn("[perch] aucune source d'activite — la creature ne progressera pas.");
+  return noActivity;
 }

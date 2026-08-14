@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { defaultsFrom, discoverPacks } from './discover.js';
+import { defaultsFrom, discoverPacks, discoverPacksIn } from './discover.js';
 
 const scratch = (): Promise<string> => mkdtemp(join(tmpdir(), 'perch-packs-'));
 
@@ -96,5 +96,38 @@ describe('defaultsFrom', () => {
 
   it('renvoie null quand aucun pack n’est installé', () => {
     expect(defaultsFrom([])).toBeNull();
+  });
+});
+
+describe('discoverPacksIn', () => {
+  it('réunit les packs de plusieurs emplacements', async () => {
+    const utilisateur = await scratch();
+    const depot = await scratch();
+    await writePack(utilisateur, 'telecharge', ['a']);
+    await writePack(depot, 'livre', ['b']);
+
+    const found = await discoverPacksIn([utilisateur, depot]);
+    expect(found.map((entry) => entry.pack.id)).toEqual(['livre', 'telecharge']);
+  });
+
+  // Un pack déposé par l'utilisateur doit primer sur celui du dépôt : c'est le seul moyen
+  // de corriger un pack livré abîmé sans toucher à l'installation.
+  it('garde le premier emplacement en cas d’identifiant partagé', async () => {
+    const utilisateur = await scratch();
+    const depot = await scratch();
+    await writePack(utilisateur, 'meme-id', ['sien']);
+    await writePack(depot, 'meme-id', ['livre']);
+
+    const found = await discoverPacksIn([utilisateur, depot]);
+    expect(found).toHaveLength(1);
+    expect(found[0]?.pack.lines[0]?.id).toBe('sien');
+  });
+
+  it('ignore un emplacement inexistant', async () => {
+    const depot = await scratch();
+    await writePack(depot, 'livre', ['b']);
+
+    const found = await discoverPacksIn([join(depot, 'nulle-part'), depot]);
+    expect(found.map((entry) => entry.pack.id)).toEqual(['livre']);
   });
 });

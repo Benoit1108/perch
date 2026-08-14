@@ -145,6 +145,20 @@ tenable : après un `parse`, le type est garanti à l'exécution.
   et supprimerait le balancement ; ne pas recadrer du tout laisserait le sprite flotter
   au-dessus de sa surface, du vide transparent sous les pattes.
 
+### Windows et portabilité
+
+- **Deux appels Win32 ne sont pas à écrire.** `screen.getCursorScreenPoint()` et
+  `powerMonitor.getSystemIdleTime()` remplacent `GetCursorPos` et `GetLastInputInfo` sur
+  Windows, macOS et vraie session X11. Ils MENTENT sous XWayland — curseur figé, inactivité
+  toujours nulle (mesuré) — d'où `electronSeesDesktop`, qui préfère avouer l'ignorance.
+- **Aucune interface d'Electron ne donne la géométrie des fenêtres.** C'est ce qui limite
+  Windows aux bords d'écran, et ce que l'extension GNOME apporte sur Linux.
+- **`--ozone-platform=x11` se choisit à l'exécution**, pas dans le script npm : il est
+  indispensable sur Linux et dépourvu de sens ailleurs.
+- **Les chemins relatifs au dépôt ne survivent pas à l'empaquetage.** Les packs se cherchent
+  dans le dossier de l'utilisateur, puis dans `process.resourcesPath`, puis dans le dépôt.
+  L'AppImage démarrait sans visage alors que ses images étaient deux dossiers plus loin.
+
 ### Outillage
 
 - **TypeScript est épinglé en `~6.0.3`** : `typescript-eslint` exige `<6.1.0`. TS 7 existe
@@ -156,6 +170,10 @@ tenable : après un `parse`, le type est garanti à l'exécution.
   complète pas : en ajouter un a fait disparaître les tests de l'analyse et transformé des
   exports utilisés en faux positifs. Si `knip.json` doit bouger, redéclarer TOUTES les
   zones — points d'entrée par espace de travail, tests compris.
+- **Une porte toujours rouge n'est plus une porte.** `npm audit` échouait en permanence sur
+  des avis sans correctif amont ; `npm run audit` accepte désormais une liste NOMMÉE avec
+  raison et date de réexamen, et refuse tout le reste — y compris une exception devenue
+  inutile.
 - **Ancrer les motifs `.gitignore` avec un `/` initial.** `packs/*` a fait disparaître
   `packages/app/src/packs/` aux yeux de knip — pas à ceux de git, qui ancre déjà les motifs
   contenant une barre. Résultat : knip déclarait morts des exports parfaitement utilisés.

@@ -45,6 +45,29 @@ export async function discoverPacks(packsRoot: string): Promise<DiscoveredPack[]
   return found.sort((a, b) => a.pack.id.localeCompare(b.pack.id));
 }
 
+/**
+ * Découvre les packs de plusieurs emplacements à la fois.
+ *
+ * Il y en a au moins deux : le dossier de l'utilisateur, où atterrissent les packs
+ * téléchargés — seul endroit inscriptible une fois l'application installée — et celui du
+ * dépôt, en développement. Un identifiant déjà vu est ignoré : le PREMIER emplacement
+ * gagne, de sorte qu'un pack déposé par l'utilisateur prime sur celui livré.
+ */
+export async function discoverPacksIn(roots: readonly string[]): Promise<DiscoveredPack[]> {
+  const trouves = await Promise.all(roots.map(async (root) => discoverPacks(root)));
+
+  const vus = new Set<string>();
+  const uniques: DiscoveredPack[] = [];
+
+  for (const entry of trouves.flat()) {
+    if (vus.has(entry.pack.id)) continue;
+    vus.add(entry.pack.id);
+    uniques.push(entry);
+  }
+
+  return uniques.sort((a, b) => a.pack.id.localeCompare(b.pack.id));
+}
+
 /** Pack et lignée de départ, déduits du premier pack installé et de sa première lignée. */
 export function defaultsFrom(
   packs: readonly DiscoveredPack[]

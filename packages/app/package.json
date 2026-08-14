@@ -7,7 +7,7 @@
   "main": "./dist/main/index.js",
   "scripts": {
     "assets": "node ./scripts/copy-renderer.mjs",
-    "start": "npm run assets && electron . --ozone-platform=x11"
+    "start": "npm run assets && node ./scripts/start.mjs"
   },
   "dependencies": {
     "@perch/core": "*",
