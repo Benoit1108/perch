@@ -16,7 +16,7 @@ const contexte = (overrides: Partial<SpeechContext> = {}): SpeechContext => ({
 const evenement: SpeechRequest = { key: 'speech.levelUp', register: 'evenement' };
 const bavardage: SpeechRequest = { key: 'speech.chatter', register: 'bavardage' };
 const humeur: SpeechRequest = { key: 'speech.sleepy', register: 'humeur' };
-const interaction: SpeechRequest = { key: 'speech.grabbed', register: 'interaction' };
+const interaction: SpeechRequest = { key: 'speech.questDone', register: 'interaction' };
 
 describe('canSpeak — les règles de silence', () => {
   it('autorise la première bulle', () => {

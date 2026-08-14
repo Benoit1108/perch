@@ -9,7 +9,7 @@ export const CONTACT = 0.5;
  * Le hasard est PORTÉ PAR L'ÉTAT, jamais pris dans `Math.random()` : `step` reste une
  * fonction pure, et une vie entière se rejoue à l'identique dans un test.
  */
-export function nextRandom(seed: number): { readonly value: number; readonly seed: number } {
+function nextRandom(seed: number): { readonly value: number; readonly seed: number } {
   let s = seed | 0;
   s ^= s << 13;
   s ^= s >>> 17;
@@ -19,7 +19,7 @@ export function nextRandom(seed: number): { readonly value: number; readonly see
 }
 
 /** Surfaces atteignables depuis la position courante, la sienne exceptée. */
-export function reachablePerches(
+function reachablePerches(
   surfaces: readonly Surface[],
   pet: Pet,
   reach: number
@@ -63,7 +63,7 @@ export function newLeg(pet: Pet, config: MotionConfig): Pet {
  * promenade, une demi-minute après une longue. C'est ce qui distingue un compagnon qui
  * souffle d'un compagnon qui saccade.
  */
-export function startRest(pet: Pet, world: WorldView, config: MotionConfig): Pet {
+function startRest(pet: Pet, world: WorldView, config: MotionConfig): Pet {
   const duration = config.restMinMs + pet.tiredness * (config.restMaxMs - config.restMinMs);
 
   return {

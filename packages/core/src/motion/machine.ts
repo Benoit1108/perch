@@ -2,8 +2,6 @@ import type { Point } from '../ports/geometry.js';
 import { settled } from './ground.js';
 import type { MotionConfig, Pet, WorldView } from './pet.js';
 
-export { nearestFoothold } from './ground.js';
-
 /** Le curseur a-t-il bougé depuis la dernière observation ? */
 function moved(previous: Point | null, current: Point, epsilon: number): boolean {
   if (previous === null) return true;
@@ -78,8 +76,6 @@ function updateMode(pet: Pet, world: WorldView, config: MotionConfig): Pet {
  * vol libre et vie au sol.
  */
 export function step(pet: Pet, world: WorldView, dtMs: number, config: MotionConfig): Pet {
-  if (pet.state === 'attrape') return pet;
-
   const dt = dtMs / 1000;
   const tracked = updateMode(pet, world, config);
 
@@ -91,9 +87,4 @@ export function step(pet: Pet, world: WorldView, dtMs: number, config: MotionCon
   const landing = pet.mode === 'suit' ? { ...tracked, state: 'chute' as const, vy: 0 } : tracked;
 
   return settled(landing, world, dt, config);
-}
-
-/** Repose le compagnon après un lâcher : il reprend sa chute là où on l'a laissé. */
-export function release(pet: Pet): Pet {
-  return { ...pet, mode: 'pose', state: 'chute', vy: 0, climbTo: null };
 }

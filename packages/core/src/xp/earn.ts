@@ -48,7 +48,7 @@ export interface DailyActivity {
 }
 
 /** Durée d'inactivité au-delà de laquelle une absence compte comme une vraie pause. */
-export const BREAK_AFTER_MS = 5 * 60_000;
+const BREAK_AFTER_MS = 5 * 60_000;
 
 export interface ActivitySample {
   readonly idleMs: number;

@@ -9,6 +9,16 @@ adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 
 ### Added
 
+- **De vraies créatures, animées.** Six lignées, quatorze stades, sur le thème de ce qui
+  se perche. Les images sont téléchargées puis converties par `npm run pack:fetch` — le
+  dépôt n'en contient aucune.
+- Choix du compagnon au premier lancement, et à tout moment depuis les réglages.
+  L'expérience acquise est conservée : seule l'apparence change.
+- Évolutions à Lv.16 et Lv.36, mises en scène par un halo et un bond d'échelle. Elles
+  éclipsent l'annonce de montée de niveau plutôt que de s'y ajouter.
+- Animations décrites par le manifeste : plusieurs séquences par stade, chacune jouée à sa
+  cadence, ralentie pendant le sommeil et accélérée en vol.
+
 - **Deux modes de comportement.** Le compagnon vole librement vers le curseur quand la
   souris bouge, et se pose sur une surface quand elle s'arrête. La bascule entre les deux
   fait sa personnalité.
@@ -75,6 +85,9 @@ adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 - Intégration continue : portes de qualité, vérification des garde-fous, audit de
   vulnérabilités. Dependabot hebdomadaire.
 
+- **Sprint S0 — Spike.** Neuf pièges identifiés sur du code jetable plutôt que sur
+  l'architecture finale. Détail dans [spike/README.md](spike/README.md).
+
 ### Changed
 
 - Node cible porté de 22 à **24 LTS**.
@@ -83,8 +96,32 @@ adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 - Electron épinglé en `^42.7.0` : à partir de 43.2.0, `setIgnoreMouseEvents` ne réduit plus
   la région d'entrée X11 et l'overlay avale tous les clics du bureau
   ([electron#52456](https://github.com/electron/electron/issues/52456)).
+- Les pages de rendu sont découpées en trois : balisage, style, script. Leurs scripts sont
+  désormais lus par ESLint et soumis aux mêmes limites que le reste — ils y échappaient
+  entièrement.
+- La politique de sécurité des pages n'autorise plus aucune source en ligne. Un
+  gestionnaire d'événement glissé dans un libellé de tâche ne s'exécute plus.
+- Les libellés passent par le catalogue et suivent la langue sans redémarrer :
+  la fenêtre de réglages, celle du choix, et les bulles du compagnon.
 
 ### Fixed
 
-- **Sprint S0 — Spike.** Neuf pièges identifiés sur du code jetable plutôt que sur
-  l'architecture finale. Détail dans [spike/README.md](spike/README.md).
+- **Le compagnon ne pouvait pas dormir.** La boucle transmettait une inactivité toujours
+  nulle au moteur : l'état de sommeil, son animation ralentie et son bâillement étaient
+  inatteignables depuis leur écriture.
+- **L'apparence se perdait au démarrage** une fois sur deux : elle était envoyée avant que
+  la page n'ait branché ses écouteurs, et le compagnon restait un marqueur sans nom
+  jusqu'à sa prochaine évolution. Les messages rares sont désormais conservés et rejoués.
+- Le pack de test apparaissait dans la fenêtre de choix, à côté des vraies créatures : le
+  choisir donnait un compagnon sans sprite, définitivement.
+- Les écritures d'état se chevauchaient : un choix de compagnon pouvait être effacé par la
+  minute de progression partie avant lui.
+- Sans pack téléchargé, l'application refusait de démarrer alors qu'elle sait très bien
+  fonctionner avec un marqueur.
+- Un motif `.gitignore` non ancré masquait tout `packages/app/src/packs/` à knip, qui
+  signalait alors comme morts des exports parfaitement utilisés.
+
+### Removed
+
+- Code inatteignable : la saisie à la souris qui n'a jamais été branchée, et une poignée
+  d'exports que seul leur propre test maintenait en vie.

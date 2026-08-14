@@ -120,6 +120,30 @@ tenable : après un `parse`, le type est garanti à l'exécution.
   frame dépasse son budget. Se replanifier après chaque passage.
 - **Le rendu interpole vers la position simulée.** Le moteur reste autoritaire ; l'affichage
   la rejoint progressivement. Sans ça, la moindre irrégularité de cadence se voit.
+- **Les images passent par IPC, encodées en `data:`.** La page du compagnon n'a aucun accès
+  au disque — sa politique de sécurité n'autorise que `img-src data:` — et elle est
+  toujours au premier plan. Elles voyagent par ÉVÉNEMENT (démarrage, choix, évolution),
+  jamais dans la boucle : quelques dizaines de kilo-octets soixante fois par seconde
+  saturent le canal pour retransmettre la même chose.
+- **Borner le delta de `requestAnimationFrame`.** Au réveil après une veille, il vaut
+  plusieurs minutes : l'animation défile d'un coup jusqu'à une image au hasard.
+- **Les pages de rendu se découpent en trois** : `x.html`, `x.css`, `x.js`. Le script
+  inséré dans le HTML échappait à ESLint, à `max-lines` et à toute revue — une page avait
+  atteint 361 lignes en mélangeant balisage, style et logique. La politique de sécurité
+  n'autorise donc plus aucune source en ligne : `script-src 'self'` fonctionne en `file://`
+  (vérifié), et un module ES n'y fonctionnerait PAS — origine opaque, garder des scripts
+  classiques.
+- **Ce qui vient d'un manifeste ou de l'utilisateur se pose avec `textContent`**, jamais en
+  assemblant du HTML. Les noms de créatures et les libellés de tâches sont des données
+  qu'on n'a pas écrites.
+- **Deux façons d'envoyer au rendu.** `send` pour ce qui se répète (les frames) : une perte
+  est réparée seize millisecondes plus tard. `retain` pour ce qui est rare (l'apparence) :
+  conservé et rejoué à chaque chargement, sans quoi le message part avant que la page
+  n'ait branché ses écouteurs.
+- **Sprites alignés par le BAS, recadrés sur l'UNION des zones utiles.** Le moteur ancre le
+  compagnon par les pieds. Recadrer image par image collerait chaque frame au même endroit
+  et supprimerait le balancement ; ne pas recadrer du tout laisserait le sprite flotter
+  au-dessus de sa surface, du vide transparent sous les pattes.
 
 ### Outillage
 
@@ -128,6 +152,15 @@ tenable : après un `parse`, le type est garanti à l'exécution.
 - **Node 24 LTS** (`.nvmrc`). La 26 n'est pas LTS.
 - Un `SIGBUS` sur `vitest` ou `knip` signale un binaire natif tronqué au téléchargement
   (`@rolldown/binding-*`). Comparer sa taille à `npm view <pkg> dist.unpackedSize`.
+- **Un fichier de configuration knip remplace la détection automatique**, il ne la
+  complète pas : en ajouter un a fait disparaître les tests de l'analyse et transformé des
+  exports utilisés en faux positifs. Si `knip.json` doit bouger, redéclarer TOUTES les
+  zones — points d'entrée par espace de travail, tests compris.
+- **Ancrer les motifs `.gitignore` avec un `/` initial.** `packs/*` a fait disparaître
+  `packages/app/src/packs/` aux yeux de knip — pas à ceux de git, qui ancre déjà les motifs
+  contenant une barre. Résultat : knip déclarait morts des exports parfaitement utilisés.
+  Devant un verdict d'outil qui contredit une lecture du code, vérifier d'abord ce que
+  l'outil voit (`npx knip --trace-export <nom>`).
 
 ## Conventions
 

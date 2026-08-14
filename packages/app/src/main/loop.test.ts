@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { Point, Rect, SensorPort } from '@perch/core';
+import type { ActivityPort, Point, Rect, SensorPort } from '@perch/core';
 
 import type { FrameSink } from './loop.js';
 import { startLoop } from './loop.js';
@@ -47,6 +47,56 @@ beforeEach(() => {
 });
 afterEach(() => {
   vi.useRealTimers();
+});
+
+/** Source d'activité de doublure. `null` imite une plateforme qui ne sait pas mesurer. */
+function fakeActivity(idleMs: number | null): ActivityPort {
+  return {
+    idleMs: () => Promise.resolve(idleMs),
+    focusedApp: () => Promise.resolve(null),
+  };
+}
+
+/**
+ * Le câblage de l'inactivité, et pas seulement la règle qui en dépend.
+ *
+ * La boucle passait `idleMs: 0` en dur : le compagnon ne pouvait donc jamais s'endormir,
+ * et le défaut a vécu des semaines sans que rien ne le signale. Les états de sommeil sont
+ * testés ailleurs — ce qui manquait, c'est la preuve que la valeur arrive jusqu'au moteur.
+ */
+describe('startLoop — inactivité', () => {
+  it('endort le compagnon quand la source rapporte une longue inactivité', async () => {
+    const { sink, frames } = collector();
+    const stop = startLoop({
+      overlay: sink,
+      sensors: fakeSensors(null),
+      debug: false,
+      activity: fakeActivity(10 * 60_000),
+    });
+
+    await vi.advanceTimersByTimeAsync(400);
+    stop();
+
+    expect(frames.at(-1)?.pet.state).toBe('sommeil');
+  });
+
+  // Invariant I7 : sans moniteur d'inactivité — KDE, X11 hors GNOME, Windows avant S7 —
+  // le compagnon doit vivre quand même. Confondre « non mesurable » et « inactif depuis
+  // toujours » l'endormirait définitivement sur ces machines.
+  it('reste éveillé quand la plateforme ne sait pas mesurer', async () => {
+    const { sink, frames } = collector();
+    const stop = startLoop({
+      overlay: sink,
+      sensors: fakeSensors(null),
+      debug: false,
+      activity: fakeActivity(null),
+    });
+
+    await vi.advanceTimersByTimeAsync(400);
+    stop();
+
+    expect(frames.at(-1)?.pet.state).not.toBe('sommeil');
+  });
 });
 
 describe('startLoop', () => {

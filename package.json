@@ -15,6 +15,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . --max-warnings=0",
+    "lint:length": "node scripts/check-length.mjs",
     "typecheck": "tsc --build --force",
     "deps": "depcruise packages --config .dependency-cruiser.cjs",
     "dead": "knip",
@@ -22,12 +23,13 @@
     "commitlint": "commitlint --edit",
     "verify:guardrails": "bash scripts/verify-guardrails.sh",
     "setup:sandbox": "bash scripts/fix-sandbox.sh",
+    "pack:fetch": "python3 scripts/fetch-pack.py && npm run typecheck && node scripts/validate-pack.mjs",
     "stop": "node scripts/stop.mjs",
     "watch": "node scripts/watch.mjs",
     "install:extension": "npm run build --workspace @perch/shell && node scripts/install-extension.mjs",
     "settings": "npm run typecheck && npm start --workspace @perch/app -- --settings",
     "start": "npm run typecheck && npm start --workspace @perch/app",
-    "health": "npm run format:check && npm run lint && npm run typecheck && npm run deps && npm run dead && npm run test",
+    "health": "npm run format:check && npm run lint && npm run lint:length && npm run typecheck && npm run deps && npm run dead && npm run test",
     "clean": "tsc --build --clean"
   },
   "devDependencies": {

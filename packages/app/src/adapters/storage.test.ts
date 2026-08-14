@@ -72,14 +72,35 @@ describe('createFileStorage — écriture', () => {
     expect(left.filter((name) => name.endsWith('.tmp'))).toEqual([]);
   });
 
-  it('survit à deux écritures concurrentes', async () => {
+  // Le cas réel : la progression écrit à la minute, le choix du compagnon au clic. Sans
+  // sérialisation, rien ne garantit l'ordre des renommages, et le choix se faisait
+  // effacer par un tick parti avant lui.
+  it('applique les écritures concurrentes dans l’ordre des appels', async () => {
     const dir = await scratch();
     const storage = createFileStorage(join(dir, 'state.json'));
 
-    await Promise.all([storage.write({ a: 1 }), storage.write({ a: 2 })]);
+    await Promise.all([
+      storage.write({ rang: 1 }),
+      storage.write({ rang: 2 }),
+      storage.write({ rang: 3 }),
+    ]);
 
-    const result = await storage.read();
-    expect(result.kind).toBe('value');
+    await expect(storage.read()).resolves.toEqual({ kind: 'value', value: { rang: 3 } });
+  });
+
+  it('reste utilisable après une écriture en échec', async () => {
+    const dir = await scratch();
+    const storage = createFileStorage(join(dir, 'state.json'));
+
+    // Une valeur cyclique fait échouer la sérialisation : sans précaution, la file
+    // resterait bloquée sur cette promesse rejetée et plus rien ne s'écrirait jamais.
+    const cyclique: Record<string, unknown> = {};
+    cyclique['moi'] = cyclique;
+
+    await expect(storage.write(cyclique)).rejects.toThrow();
+    await storage.write({ apres: true });
+
+    await expect(storage.read()).resolves.toEqual({ kind: 'value', value: { apres: true } });
   });
 });
 

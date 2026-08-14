@@ -1,0 +1,71 @@
+/*
+ * Jetons et base communs aux fenêtres ordinaires — réglages et choix du compagnon.
+ *
+ * Ils vivaient en double dans les deux pages : deux palettes à faire évoluer ensemble,
+ * qui auraient divergé à la première retouche.
+ *
+ * La palette claire est définie sur `:root`, la sombre ne redéfinit QUE les jetons :
+ * aucune couleur n'existe uniquement dans une requête de média, sans quoi un réglage
+ * système inhabituel laisserait du texte sans couleur.
+ */
+:root {
+  --fond: #faf9fc;
+  --carte: #f1eff6;
+  --trait: #dad5e6;
+  --encre: #1b1826;
+  --encre-2: #4a4459;
+  --accent: #5b4cc4;
+  --danger: #b33f36;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fond: #131120;
+    --carte: #1c1a2b;
+    --trait: #322e47;
+    --encre: #eeebf7;
+    --encre-2: #b9b2cc;
+    --accent: #9c8df0;
+    --danger: #e4796d;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 24px;
+  background: var(--fond);
+  color: var(--encre);
+  font:
+    14px/1.55 system-ui,
+    sans-serif;
+}
+
+h1 {
+  font-size: 1.3rem;
+  margin: 0 0 4px;
+}
+
+h2 {
+  font-size: 0.98rem;
+  margin: 0 0 10px;
+}
+
+p.sous {
+  color: var(--encre-2);
+  margin: 0 0 22px;
+}
+
+.aide {
+  color: var(--encre-2);
+  font-size: 0.86rem;
+  margin: 6px 0 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

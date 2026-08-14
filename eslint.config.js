@@ -154,4 +154,22 @@ export default defineConfig([
     },
     extends: [tseslint.configs.disableTypeChecked],
   },
+
+  // Scripts des pages de rendu.
+  //
+  // Ils vivaient auparavant DANS le HTML, où aucun outil ne les voyait : ni la limite de
+  // taille, ni la complexité, ni même une variable jamais utilisée. Une page avait dérivé
+  // à 361 lignes en embarquant de la vraie logique. Les sortir en fichiers les remet sous
+  // contrôle, et permet en prime de retirer `unsafe-inline` de la politique de sécurité.
+  //
+  // Scripts classiques et non modules : un module ES chargé depuis `file://` est refusé
+  // pour cause d'origine opaque.
+  {
+    files: ['packages/app/src/renderer/**/*.js'],
+    languageOptions: {
+      sourceType: 'script',
+      globals: globals.browser,
+    },
+    extends: [tseslint.configs.disableTypeChecked],
+  },
 ]);

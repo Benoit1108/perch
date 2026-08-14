@@ -2,217 +2,32 @@
 <html lang="fr">
   <head>
     <meta charset="utf-8" />
+    <!--
+      Aucune source `unsafe-inline` : le style et le script vivent dans des fichiers
+      voisins, servis depuis le dossier de la page. C'est plus strict que la version
+      précédente, où toute injection dans le HTML se serait exécutée — et cette page est
+      toujours au premier plan, au-dessus de tout le bureau.
+
+      `img-src data:` seulement : les sprites arrivent encodés par IPC, cette page n'a
+      accès ni au disque ni au réseau.
+    -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'"
+      content="default-src 'none'; img-src data:; style-src 'self'; script-src 'self'"
     />
     <title>Perch</title>
-    <style>
-      html,
-      body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        background: transparent;
-        user-select: none;
-      }
-
-      /* PAS de `cursor: none` : l'overlay couvre tout le bureau, masquer le curseur
-         le masquerait partout. Piège rencontré en S0. */
-
-      #pet {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 48px;
-        height: 48px;
-        margin-left: -24px;
-        margin-top: -48px;
-        will-change: transform;
-        transform: translate3d(-200px, -200px, 0);
-      }
-
-      /* Marqueur provisoire. Les vraies créatures arrivent en S6 : aucun sprite n'est
-         committé dans ce dépôt (invariant I5). */
-      #corps {
-        width: 100%;
-        height: 100%;
-        border-radius: 46% 46% 40% 40%;
-        background: linear-gradient(160deg, #7b6bf0, #4b3fb0);
-        box-shadow: 0 3px 10px rgb(0 0 0 / 35%);
-        position: relative;
-      }
-      #corps::before,
-      #corps::after {
-        content: '';
-        position: absolute;
-        top: 34%;
-        width: 7px;
-        height: 9px;
-        border-radius: 50%;
-        background: #fdfdff;
-      }
-      #corps::before {
-        left: 24%;
-      }
-      #corps::after {
-        right: 24%;
-      }
-
-      #bulle {
-        position: absolute;
-        bottom: 56px;
-        left: 50%;
-        transform: translateX(-50%);
-        white-space: nowrap;
-        font:
-          600 13px/1.3 system-ui,
-          sans-serif;
-        color: #2b2118;
-        background: #fdf6d8;
-        border: 2px solid #2b2118;
-        border-radius: 10px;
-        padding: 5px 10px;
-        opacity: 0;
-        transition: opacity 0.25s;
-        pointer-events: none;
-      }
-      #bulle.visible {
-        opacity: 1;
-      }
-
-      #pet[hidden] {
-        display: none;
-      }
-
-      #pet[data-etat='sommeil'] #corps {
-        filter: saturate(0.5) brightness(0.8);
-      }
-      #pet[data-etat='chute'] #corps {
-        border-radius: 50% 50% 34% 34%;
-      }
-
-      #hud {
-        position: absolute;
-        top: 12px;
-        left: 12px;
-        font:
-          12px/1.5 ui-monospace,
-          monospace;
-        color: #e8e4f5;
-        background: rgb(16 14 26 / 82%);
-        border: 1px solid rgb(160 150 200 / 40%);
-        border-radius: 6px;
-        padding: 8px 12px;
-        white-space: pre;
-      }
-      #hud[hidden] {
-        display: none;
-      }
-
-      #surfaces {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-      }
-    </style>
+    <link rel="stylesheet" href="overlay.css" />
   </head>
   <body>
     <svg id="surfaces"></svg>
     <div id="pet">
       <div id="bulle"></div>
-      <div id="corps"></div>
+      <div id="eclat"></div>
+      <div id="repli"></div>
+      <img id="corps" alt="" hidden />
     </div>
     <div id="hud" hidden></div>
 
-    <script>
-      const pet = document.getElementById('pet');
-      const bulle = document.getElementById('bulle');
-      const hud = document.getElementById('hud');
-      const svg = document.getElementById('surfaces');
-
-      let frame = null;
-      let peint = 0;
-
-      // Position AFFICHÉE, distincte de la position simulée.
-      //
-      // Le moteur est autoritaire mais son pas dépend d'un aller-retour D-Bus : la
-      // cadence n'est jamais parfaitement régulière. Appliquer sa sortie telle quelle
-      // rend la gigue visible. On interpole donc vers elle — c'est ce qui rendait la
-      // version jetable de S0 fluide, sans rien retirer à l'autorité du moteur.
-      let vueX = null;
-      let vueY = null;
-      const LISSAGE = 0.35;
-
-      function dessinerSurfaces(f) {
-        const parts = f.surfaces.map(
-          (s) =>
-            `<line x1="${s.start - f.origin.x}" y1="${s.y - f.origin.y}" x2="${s.end - f.origin.x}" y2="${s.y - f.origin.y}" stroke="${s.kind === 'ecran' ? 'rgb(155,141,240)' : 'rgb(233,178,94)'}" stroke-width="3"/>`
-        );
-        svg.innerHTML = parts.join('');
-      }
-
-      window.perch.onFrame((f) => {
-        frame = f;
-
-        // Plein écran : le compagnon se cache entièrement, il ne se contente pas de se taire.
-        pet.hidden = f.hidden === true;
-
-        if (f.bubble) {
-          bulle.textContent = f.bubble;
-          bulle.classList.add('visible');
-        } else {
-          bulle.classList.remove('visible');
-        }
-
-        if (!f.debug) {
-          hud.hidden = true;
-          svg.innerHTML = '';
-          return;
-        }
-        hud.hidden = false;
-        hud.textContent =
-          `capteurs  ${f.backend}\n` +
-          `etat      ${f.pet.state}\n` +
-          `position  ${Math.round(f.pet.x)}, ${Math.round(f.pet.y)}\n` +
-          `curseur   ${f.pointer ? `${f.pointer.x}, ${f.pointer.y}` : 'inconnu'}\n` +
-          `surfaces  ${f.surfaces.length}`;
-        peint += 1;
-        if (peint % 20 === 1) dessinerSurfaces(f);
-      });
-
-      function tick() {
-        if (frame !== null) {
-          const cibleX = frame.pet.x - frame.origin.x;
-          const cibleY = frame.pet.y - frame.origin.y;
-
-          if (vueX === null || vueY === null) {
-            vueX = cibleX;
-            vueY = cibleY;
-          } else {
-            // Un saut important — placement initial, sauvetage après débranchement d'un
-            // écran — doit être instantané : l'interpoler donnerait un glissement absurde
-            // à travers tout le bureau.
-            const saut = Math.abs(cibleX - vueX) + Math.abs(cibleY - vueY);
-            if (saut > 400) {
-              vueX = cibleX;
-              vueY = cibleY;
-            } else {
-              vueX += (cibleX - vueX) * LISSAGE;
-              vueY += (cibleY - vueY) * LISSAGE;
-            }
-          }
-
-          pet.style.transform = `translate3d(${vueX.toFixed(1)}px, ${vueY.toFixed(1)}px, 0) scaleX(${frame.pet.facing})`;
-          pet.dataset.etat = frame.pet.state;
-        }
-        requestAnimationFrame(tick);
-      }
-      requestAnimationFrame(tick);
-    </script>
+    <script src="overlay.js"></script>
   </body>
 </html>

@@ -18,11 +18,34 @@ describe('parité des catalogues', () => {
     }
   });
 
-  it('ne laisse aucun paramètre non substitué dans les chaînes sans paramètre', () => {
+  /**
+   * Paramètres déclarés par une chaîne, sous la forme `{nom}`.
+   *
+   * Les deux tests suivants remplacent une version qui excluait `speech.levelUp` par son
+   * nom : la première clé à paramètre ajoutée ensuite l'a fait échouer. Une liste
+   * d'exceptions tenue à la main finit toujours par être la vraie règle.
+   */
+  const parametres = (texte: string): string[] =>
+    [...texte.matchAll(/\{(\w+)\}/gu)].map((trouve) => trouve[1] ?? '').sort();
+
+  // Le défaut réel : `{level}` présent en français, oublié en anglais. L'anglophone lit
+  // une phrase sans son chiffre, et rien ne le signale.
+  it('déclare les mêmes paramètres dans toutes les langues', () => {
+    for (const key of MESSAGE_KEYS) {
+      const reference = parametres(translate('fr', key));
+      for (const locale of LOCALES) {
+        expect(parametres(translate(locale, key))).toEqual(reference);
+      }
+    }
+  });
+
+  it('substitue tous les paramètres déclarés', () => {
     for (const locale of LOCALES) {
       for (const key of MESSAGE_KEYS) {
-        if (key === 'speech.levelUp') continue;
-        expect(translate(locale, key)).not.toMatch(/\{[a-z]+\}/i);
+        const fournis = Object.fromEntries(
+          parametres(translate(locale, key)).map((nom) => [nom, 'x'])
+        );
+        expect(translate(locale, key, fournis)).not.toMatch(/\{\w+\}/u);
       }
     }
   });

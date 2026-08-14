@@ -7,15 +7,15 @@ import type { MessageKey } from '../i18n/catalog.js';
  * les moins importantes au lieu de les empiler. Un compagnon qui rattrape son retard de
  * bavardage après une réunion est insupportable.
  */
-export const REGISTERS = ['evenement', 'interaction', 'humeur', 'bavardage'] as const;
-export type SpeechRegister = (typeof REGISTERS)[number];
-
-const PRIORITY: Record<SpeechRegister, number> = {
+const PRIORITY = {
   evenement: 0,
   interaction: 1,
   humeur: 2,
   bavardage: 3,
-};
+} as const;
+
+/** Dérivé de la table : la liste et les priorités ne peuvent pas se contredire. */
+type SpeechRegister = keyof typeof PRIORITY;
 
 export interface SpeechRequest {
   readonly key: MessageKey;

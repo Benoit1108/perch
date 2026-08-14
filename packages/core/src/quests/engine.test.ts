@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import type { QuestProfile, QuestSignals } from './catalog.js';
-import { CATALOG, noSignals, poolFor } from './catalog.js';
+import { CATALOG, poolFor } from './catalog.js';
+
 import {
   defaultQuestConfig,
   emptyQuests,
@@ -9,6 +10,16 @@ import {
   questsForDay,
   rewardPerQuest,
 } from './engine.js';
+
+/** Journée vierge. Vit ICI : la production ne part jamais de zéro, elle part du réel. */
+const noSignals: QuestSignals = {
+  activeMs: 0,
+  focusMs: 0,
+  distinctApps: 0,
+  breaks: 0,
+  commits: 0,
+  tasksDone: 0,
+};
 
 const config = defaultQuestConfig;
 const HEURE = 3_600_000;

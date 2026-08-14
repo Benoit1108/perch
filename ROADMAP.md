@@ -32,7 +32,7 @@ les violer casse quelque chose de structurel, pas par goût.
 | I7  | **Dégradation gracieuse** : sans extension GNOME, le pet vit quand même — déplacements, animations, bulles, XP. **Mais sur Wayland il ne suit ni la souris ni les fenêtres** (révisé le 2026-08-13, cf. constat 7 ter du spike). | L'installation ne doit pas être un mur pour un non-technicien, mais l'extension n'est plus un simple bonus sur Linux : elle est requise pour le suivi du curseur. Sur X11 et Windows, le repli reste complet. |
 | I8  | **Strings UI via un fichier de locales.** Jamais de texte en dur.                                                                                                                                                                | Convention héritée de `claude-pokemon`, qui a payé pour l'apprendre.                                                                                                                                          |
 | I9  | **Aucun identifiant de créature en dur** dans le code. Tout passe par le manifeste de pack.                                                                                                                                      | Le projet doit survivre au remplacement du pack par défaut.                                                                                                                                                   |
-| I10 | **`npm run health` passe à la fin de chaque sprint.** Aucune dette reportée.                                                                                                                                                     | Voir [docs/QUALITY.md](docs/QUALITY.md) — un projet neuf n'a aucune excuse.                                                                                                                                   |
+| I10 | **`npm run health` passe à la fin de chaque sprint.** Aucune dette reportée. La limite de 200 lignes vaut pour TOUS les fichiers, pas seulement le TypeScript — `npm run lint:length`.                                           | Voir [docs/QUALITY.md](docs/QUALITY.md) — un projet neuf n'a aucune excuse.                                                                                                                                   |
 
 ---
 
@@ -169,7 +169,12 @@ manquait le vol, et la bascule.
 - Gravité et collision sur segments horizontaux
 - Construction des surfaces marchables depuis les capteurs
 - **Géométrie multi-écrans en union de rectangles**, avec les zones vides (voir plus bas)
-- Attraper / déplacer / lâcher à la souris
+- ~~Attraper / déplacer / lâcher à la souris~~ — **non fait**, reporté (constat du
+  2026-08-14). L'état `attrape` existait, mais rien ne l'a jamais posé : la fonctionnalité
+  était cochée sans être branchée. L'overlay laisse passer TOUS les clics par construction ;
+  la saisie demande une région d'entrée limitée au compagnon, donc `setIgnoreMouseEvents`
+  avec transfert — l'appel même qui, en S0, a fait avaler au bureau la totalité de ses clics.
+  Le code inatteignable a été retiré ; il reviendra avec son implémentation.
 - Branchement à chaud d'un écran → invalidation de la géométrie
 - Adaptateurs de capteurs : `gnome`, `null` (dégradé)
 
@@ -241,12 +246,26 @@ valider. C'est visible et assumé, pas silencieux.
 - ✅ **Mode privé** : suspend toute mesure. Le compagnon s'endort et cesse de progresser.
 - ✅ La liste de tâches attendue depuis S4 alimente enfin la quête correspondante.
 
-### S6 — Créatures et évolutions
+### S6 — Créatures et évolutions ✅
 
-- Chargeur de pack, manifeste validé zod, pack par défaut téléchargé à l'installation
-- Pipeline sprites : reprise de `extract_animations.py`, sortie frames PNG couleur au lieu d'ANSI
-- Choix du compagnon au premier lancement
-- Paliers d'évolution à Lv.16 et Lv.36, avec mise en scène
+- ✅ Manifeste étendu aux animations, chargeur validé zod, chemins d'assets contraints
+- ✅ Pipeline sprites `scripts/fetch-pack.py` : GIF Showdown → frames PNG, recadrées sur
+  l'union des zones utiles et alignées par le BAS (le moteur ancre le compagnon par les
+  pieds ; un recadrage image par image détruirait le balancement)
+- ✅ Recette `scripts/pack-source.json` — 6 lignées, 14 stades, thème « ce qui se perche »,
+  distinctes de `claude-pokemon` (décision du 2026-08-13)
+- ✅ Choix du compagnon au premier lancement **et depuis les réglages** : ne le proposer
+  qu'une fois enfermerait l'utilisateur dans son premier choix
+- ✅ Paliers d'évolution à Lv.16 et Lv.36, avec halo et bond d'échelle
+
+**Ce qui n'est pas fait, et pourquoi.**
+
+| Sujet                           | État                                                                                                                                                                                                      |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Téléchargement à l'installation | Le pack se fabrique par `npm run pack:fetch`, pas encore au moment d'installer. Le rendu se rabat sur un marqueur sans nom tant que rien n'est téléchargé — dégradation voulue, pas panne. À finir en S9. |
+| Python requis                   | `fetch-pack.py` dépend de Pillow. Acceptable pour un script de mainteneur, bloquant pour un installeur Windows grand public. À trancher en S7/S9.                                                         |
+| Noms de créatures non traduits  | Le manifeste porte un seul `name` par stade. Une carte par langue est l'extension naturelle, le jour où un pack visera plusieurs publics.                                                                 |
+| Validation du pack fabriqué     | Faite par le schéma RÉEL (`scripts/validate-pack.mjs`), et non par une copie de ses règles écrite dans un autre langage — deux copies d'une même règle finissent toujours par diverger.                   |
 
 ### S7 — Windows
 

@@ -79,8 +79,12 @@ module.exports = {
     {
       name: 'a7-aucun-orphelin',
       severity: 'warn',
-      comment: 'A7 — un module que rien n’atteint est du code mort en devenir.',
-      from: { orphan: true, pathNot: '\\.d\\.ts$' },
+      comment:
+        'A7 — un module que rien n’atteint est du code mort en devenir. Les scripts des ' +
+        'pages de rendu font exception : ce sont des points d’entrée du navigateur, ' +
+        'atteints par une balise `<script src>` que cet outil ne suit pas. Les exempter ' +
+        'ici est la contrepartie de les avoir sortis du HTML, où ils échappaient à TOUT.',
+      from: { orphan: true, pathNot: '(\\.d\\.ts$|^packages/app/src/renderer/)' },
       to: {},
     },
   ],

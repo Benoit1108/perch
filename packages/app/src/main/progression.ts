@@ -15,7 +15,7 @@ export interface SourceSnapshot {
   readonly tasksDone: number;
 }
 
-export const noSources: SourceSnapshot = {
+const noSources: SourceSnapshot = {
   evidence: noEvidence,
   observedCommits: [],
   tasksDone: 0,
@@ -37,6 +37,14 @@ export interface ProgressionDeps {
 
 export interface Progression {
   current(): PerchState;
+  /**
+   * Adopte une autre créature, sans toucher à l'expérience.
+   *
+   * Le choix arrive APRÈS le démarrage : l'état existe déjà, avec une créature par
+   * défaut, pour qu'une fenêtre fermée sans rien choisir laisse quand même un compagnon
+   * vivant.
+   */
+  chooseCreature(packId: string, lineId: string): Promise<void>;
   stop(): void;
 }
 
@@ -67,7 +75,9 @@ export function startProgression(initial: PerchState, deps: ProgressionDeps): Pr
     ]);
 
     const result = advanceState(state, {
-      sample: { idleMs, app },
+      // Sans mesure, on retient l'inactivité maximale : aucune expérience n'est accordée
+      // pour un temps que personne n'a observé.
+      sample: { idleMs: idleMs ?? Number.MAX_SAFE_INTEGER, app },
       elapsedMs: elapsed,
       nowMs: now,
       earn: config,
@@ -91,6 +101,12 @@ export function startProgression(initial: PerchState, deps: ProgressionDeps): Pr
 
   return {
     current: () => state,
+
+    chooseCreature: async (packId: string, lineId: string): Promise<void> => {
+      state = { ...state, creature: { ...state.creature, packId, lineId } };
+      await deps.storage.write(state);
+    },
+
     stop: () => {
       clearInterval(timer);
     },

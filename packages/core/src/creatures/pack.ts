@@ -73,12 +73,23 @@ export function stageForLevel(line: CreatureLine, level: number): CreatureStage 
   return current;
 }
 
-/** Niveau du prochain palier d'évolution, ou `null` si la lignée est à son dernier stade. */
-export function nextEvolutionLevel(line: CreatureLine, level: number): number | null {
-  const upcoming = line.stages
-    .map((stage) => stage.fromLevel)
-    .filter((from) => from > level)
-    .sort((a, b) => a - b);
+/**
+ * Stade nouvellement atteint entre deux niveaux, ou `null` si l'apparence ne change pas.
+ *
+ * C'est ce qui distingue une montée de niveau ordinaire d'une ÉVOLUTION, le seul moment
+ * du jeu qui mérite d'être mis en scène. Le franchissement se calcule sur un INTERVALLE
+ * plutôt qu'à l'égalité : une montée de plusieurs niveaux d'un coup — un retour de
+ * congés, une quête qui achève sa journée — ne doit pas passer au travers.
+ */
+export function evolutionBetween(
+  line: CreatureLine,
+  fromLevel: number,
+  toLevel: number
+): CreatureStage | null {
+  if (toLevel <= fromLevel) return null;
 
-  return upcoming[0] ?? null;
+  const before = stageForLevel(line, fromLevel);
+  const after = stageForLevel(line, toLevel);
+
+  return after.id === before.id ? null : after;
 }

@@ -22,7 +22,49 @@ function errorCode(error: unknown): string {
  * suffixe aléatoire : un nom fixe fait que deux écritures concurrentes se marchent
  * dessus, et qu'un plantage laisse un résidu qui bloque les suivantes.
  */
+/** Une écriture atomique et durable, sans se soucier des autres. */
+async function writeOnce(filePath: string, value: unknown): Promise<void> {
+  await mkdir(dirname(filePath), { recursive: true });
+  const temporary = `${filePath}.${randomUUID()}.tmp`;
+
+  const handle = await open(temporary, 'w');
+  try {
+    await handle.writeFile(`${JSON.stringify(value, null, 2)}\n`, 'utf8');
+    await handle.sync();
+  } finally {
+    await handle.close();
+  }
+
+  await rename(temporary, filePath);
+
+  // Le renommage n'est durable qu'une fois le répertoire lui-même synchronisé.
+  try {
+    const directory = await open(dirname(filePath), 'r');
+    try {
+      await directory.sync();
+    } finally {
+      await directory.close();
+    }
+  } catch {
+    // Tous les systèmes de fichiers n'autorisent pas l'ouverture d'un répertoire.
+    // L'écriture reste atomique ; seule la durabilité est un peu moins garantie.
+  }
+}
+
 export function createFileStorage(filePath: string): StoragePort {
+  /**
+   * Les écritures se suivent, elles ne se chevauchent jamais.
+   *
+   * Deux appelants écrivent réellement en même temps : la progression à chaque minute et
+   * le choix du compagnon au clic. Chacun écrit son fichier temporaire puis renomme ; rien
+   * ne garantit que les renommages arrivent dans l'ordre des appels, et le choix pouvait
+   * donc être effacé par un tick parti avant lui.
+   *
+   * Le `catch` ne masque rien à l'appelant, qui reçoit sa propre promesse : il empêche
+   * seulement qu'une écriture ratée bloque toutes les suivantes.
+   */
+  let queue: Promise<unknown> = Promise.resolve();
+
   return {
     async read(): Promise<StorageRead> {
       let raw: string;
@@ -43,31 +85,9 @@ export function createFileStorage(filePath: string): StoragePort {
     },
 
     async write(value: unknown): Promise<void> {
-      await mkdir(dirname(filePath), { recursive: true });
-      const temporary = `${filePath}.${randomUUID()}.tmp`;
-
-      const handle = await open(temporary, 'w');
-      try {
-        await handle.writeFile(`${JSON.stringify(value, null, 2)}\n`, 'utf8');
-        await handle.sync();
-      } finally {
-        await handle.close();
-      }
-
-      await rename(temporary, filePath);
-
-      // Le renommage n'est durable qu'une fois le répertoire lui-même synchronisé.
-      try {
-        const directory = await open(dirname(filePath), 'r');
-        try {
-          await directory.sync();
-        } finally {
-          await directory.close();
-        }
-      } catch {
-        // Tous les systèmes de fichiers n'autorisent pas l'ouverture d'un répertoire.
-        // L'écriture reste atomique ; seule la durabilité est un peu moins garantie.
-      }
+      const job = queue.then(() => writeOnce(filePath, value));
+      queue = job.catch(() => undefined);
+      return job;
     },
 
     async archive(): Promise<string | null> {

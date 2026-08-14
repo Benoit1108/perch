@@ -1,10 +1,16 @@
-import { BrowserWindow, ipcMain } from 'electron';
+import { BrowserWindow, app, ipcMain } from 'electron';
 import { fileURLToPath } from 'node:url';
+
+import { MESSAGE_KEYS, resolveLocale, translate } from '@perch/core';
 
 import { ConfigSchema, readConfig, writeConfig } from '../config/repos.js';
 
 const CHANNEL_READ = 'settings:read';
 const CHANNEL_WRITE = 'settings:write';
+const CHANNEL_TEXTS = 'settings:texts';
+const CHANNEL_COMPANION = 'settings:companion';
+
+const PREFIXE = 'settings.';
 
 let current: BrowserWindow | null = null;
 
@@ -41,14 +47,43 @@ export function openSettings(): void {
 }
 
 /**
+ * Libellés de la fenêtre, tirés du catalogue (invariant I8).
+ *
+ * Les clés sont RECENSÉES plutôt qu'énumérées à la main : une chaîne ajoutée au catalogue
+ * arrive d'elle-même dans la fenêtre, et une liste tenue en double ne peut pas prendre du
+ * retard sur l'autre.
+ *
+ * La langue est relue à chaque appel : elle peut changer depuis cette fenêtre même, et
+ * une capture au démarrage laisserait l'ancienne langue affichée.
+ */
+async function texts(): Promise<Record<string, string>> {
+  const config = await readConfig();
+  const locale = resolveLocale(config.locale ?? app.getLocale());
+  const out: Record<string, string> = {};
+
+  for (const key of MESSAGE_KEYS) {
+    if (key.startsWith(PREFIXE)) out[key.slice(PREFIXE.length)] = translate(locale, key);
+  }
+  return out;
+}
+
+/**
  * Branche les canaux IPC.
  *
  * L'écriture est validée par le MÊME schéma zod que la lecture du fichier : le renderer
  * est du code qui s'exécute dans un moteur web, et ce qui en vient n'a pas plus de
  * garanties que ce qui vient du disque.
  */
-export function registerSettingsIpc(onChange: () => void): void {
+export function registerSettingsIpc(onChange: () => void, onCompanion: () => void): void {
   ipcMain.handle(CHANNEL_READ, async () => readConfig());
+  ipcMain.handle(CHANNEL_TEXTS, async () => texts());
+
+  // Sans ce canal, le compagnon ne se choisirait qu'une seule fois dans une vie : la
+  // fenêtre de choix ne s'ouvre qu'au tout premier lancement, et rien ne permettrait d'y
+  // revenir ensuite.
+  ipcMain.handle(CHANNEL_COMPANION, () => {
+    onCompanion();
+  });
 
   ipcMain.handle(CHANNEL_WRITE, async (_event, payload: unknown) => {
     const parsed = ConfigSchema.safeParse(payload);

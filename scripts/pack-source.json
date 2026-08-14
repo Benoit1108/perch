@@ -1,0 +1,52 @@
+{
+  "id": "perch-classic",
+  "name": "Perchoir",
+  "license": "Sprites Pokemon Showdown — fan-art, usage non commercial. Non redistribues : telecharges a l'installation (invariant I5).",
+  "source": "https://play.pokemonshowdown.com/sprites/ani",
+  "frames": 8,
+  "canvas": 96,
+  "lines": [
+    {
+      "id": "chouette",
+      "stages": [
+        { "id": "chouette-1", "name": "Brindibou", "source": "rowlet", "fromLevel": 1 },
+        { "id": "chouette-2", "name": "Efflèche", "source": "dartrix", "fromLevel": 16 },
+        { "id": "chouette-3", "name": "Archéduc", "source": "decidueye", "fromLevel": 36 }
+      ]
+    },
+    {
+      "id": "braise",
+      "stages": [
+        { "id": "braise-1", "name": "Passerouge", "source": "fletchling", "fromLevel": 1 },
+        { "id": "braise-2", "name": "Braisillon", "source": "fletchinder", "fromLevel": 16 },
+        { "id": "braise-3", "name": "Flambusard", "source": "talonflame", "fromLevel": 36 }
+      ]
+    },
+    {
+      "id": "corbeau",
+      "stages": [
+        { "id": "corbeau-1", "name": "Minisange", "source": "rookidee", "fromLevel": 1 },
+        { "id": "corbeau-2", "name": "Bleuseille", "source": "corvisquire", "fromLevel": 16 },
+        { "id": "corbeau-3", "name": "Corvaillus", "source": "corviknight", "fromLevel": 36 }
+      ]
+    },
+    {
+      "id": "toile",
+      "stages": [
+        { "id": "toile-1", "name": "Statitik", "source": "joltik", "fromLevel": 1 },
+        { "id": "toile-2", "name": "Mygavolt", "source": "galvantula", "fromLevel": 16 }
+      ]
+    },
+    {
+      "id": "augure",
+      "stages": [
+        { "id": "augure-1", "name": "Natu", "source": "natu", "fromLevel": 1 },
+        { "id": "augure-2", "name": "Xatu", "source": "xatu", "fromLevel": 16 }
+      ]
+    },
+    {
+      "id": "machine",
+      "stages": [{ "id": "machine-1", "name": "Motisma", "source": "rotom", "fromLevel": 1 }]
+    }
+  ]
+}

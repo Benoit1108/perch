@@ -1,0 +1,64 @@
+body {
+  padding: 28px;
+}
+
+#grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px;
+}
+
+button.choix {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 10px;
+  background: var(--carte);
+  border: 2px solid var(--trait);
+  border-radius: 10px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    transform 0.15s;
+}
+
+button.choix:hover,
+button.choix:focus-visible {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  outline: none;
+}
+
+/* `pixelated` : ces sprites font 96 px de côté. Un lissage bilinéaire les transformerait
+   en taches floues dès qu'on les agrandit. */
+button.choix img {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+/* Réservé même sans image : sans cela, un pack non téléchargé ferait sauter la grille
+   d'une ligne à l'autre pendant le chargement. */
+button.choix .vide {
+  width: 96px;
+  height: 96px;
+  border-radius: 12px;
+  background: linear-gradient(160deg, #7b6bf0, #4b3fb0);
+  opacity: 0.55;
+}
+
+button.choix .nom {
+  font-weight: 600;
+}
+
+#vide {
+  color: var(--encre-2);
+}
+
+#vide[hidden] {
+  display: none;
+}

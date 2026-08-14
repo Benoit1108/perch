@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { deriveProfiles, emptyCommitLog, mergeCommits, noEvidence } from './evidence.js';
+import type { CommitLog } from './evidence.js';
+import { deriveProfiles, mergeCommits, noEvidence } from './evidence.js';
+
+/** Journal vierge. Vit ICI : la production lit toujours un journal déjà persisté. */
+const emptyCommitLog = (dayKey: string): CommitLog => ({ dayKey, hashes: [] });
 
 describe('deriveProfiles', () => {
   it('n’active aucun profil spécialisé sans preuve', () => {

@@ -33,8 +33,6 @@ export interface CommitLog {
   readonly hashes: readonly string[];
 }
 
-export const emptyCommitLog = (dayKey: string): CommitLog => ({ dayKey, hashes: [] });
-
 /**
  * Fusionne les commits observés avec ceux déjà comptés aujourd'hui.
  *

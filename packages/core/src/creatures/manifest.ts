@@ -16,13 +16,47 @@ const identifier = z
   .min(1)
   .regex(/^[a-z0-9-]+$/u, 'identifiant en minuscules, chiffres et tirets uniquement');
 
+/**
+ * Chemin d'un fichier du pack, relatif à son dossier.
+ *
+ * Un manifeste est une donnée EXTERNE, pas du code de confiance : sans cette contrainte,
+ * `../../../.ssh/id_rsa` serait un chemin valide, et le lecteur d'assets le servirait
+ * docilement au rendu. La vérification est refaite à l'ouverture du fichier — se défendre
+ * au bord ne dispense pas de se défendre au moment d'agir.
+ */
+const assetPath = z
+  .string()
+  .min(1)
+  .regex(/^[\w-]+(\/[\w-]+)*\.(png|gif|webp)$/u, 'chemin relatif simple vers une image');
+
+const ClipSchema = z.object({
+  /** Images de l'animation, dans l'ordre. Une seule image = un sprite fixe. */
+  frames: z.array(assetPath).min(1),
+  fps: z.number().positive().max(60),
+});
+
+/**
+ * Animations d'un stade.
+ *
+ * Toutes facultatives : le pack par défaut n'en fournit qu'une, les sprites d'origine
+ * n'ayant qu'une boucle d'attente. La table `PLAYBACK` décrit un ordre de repli, ce qui
+ * permet à un pack plus riche d'en fournir davantage sans que le moteur change.
+ */
+const ClipsSchema = z.object({
+  repos: ClipSchema.optional(),
+  marche: ClipSchema.optional(),
+  chute: ClipSchema.optional(),
+  sommeil: ClipSchema.optional(),
+});
+
 const CreatureStageSchema = z.object({
   id: identifier,
   name: z.string().min(1),
-  /** Chemin du sprite, relatif au dossier du pack. Jamais committé (invariant I5). */
-  sprite: z.string().min(1),
+  /** Image fixe, pour le choix du compagnon. Jamais committée (invariant I5). */
+  sprite: assetPath,
   /** Niveau à partir duquel ce stade est atteint. Le premier stade vaut toujours 1. */
   fromLevel: z.number().int().min(1).max(100),
+  clips: ClipsSchema.default({}),
 });
 
 const CreatureLineSchema = z.object({
@@ -39,6 +73,10 @@ export const CreaturePackSchema = z.object({
   lines: z.array(CreatureLineSchema).min(1),
 });
 
+export type Clip = z.infer<typeof ClipSchema>;
 export type CreatureStage = z.infer<typeof CreatureStageSchema>;
 export type CreatureLine = z.infer<typeof CreatureLineSchema>;
 export type CreaturePack = z.infer<typeof CreaturePackSchema>;
+
+/** Noms d'animation connus du moteur. Dérivés du schéma : impossible qu'ils divergent. */
+export type ClipName = keyof z.infer<typeof ClipsSchema>;

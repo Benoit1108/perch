@@ -3,9 +3,7 @@ import { bestPerch, groundBelow, isSupported } from '../world/surfaces.js';
 import type { MotionConfig, Pet, WorldView } from './pet.js';
 import { CONTACT, afterLaps, maybeHop, newLeg, startWander } from './wander.js';
 
-export { CONTACT };
-
-export function support(surfaces: readonly Surface[], x: number, y: number): Surface | null {
+function support(surfaces: readonly Surface[], x: number, y: number): Surface | null {
   const found = groundBelow(surfaces, x, y);
   return found !== null && found.y - y <= CONTACT ? found : null;
 }
@@ -17,7 +15,7 @@ export function support(surfaces: readonly Surface[], x: number, y: number): Sur
  * écran est débranché sous ses pieds. Sans lui, il tomberait indéfiniment, définitivement
  * perdu.
  */
-export function nearestFoothold(
+function nearestFoothold(
   surfaces: readonly Surface[],
   x: number,
   y: number
@@ -37,7 +35,7 @@ export function nearestFoothold(
   return best;
 }
 
-export function fall(pet: Pet, world: WorldView, dt: number, config: MotionConfig): Pet {
+function fall(pet: Pet, world: WorldView, dt: number, config: MotionConfig): Pet {
   const vy = Math.min(pet.vy + config.gravity * dt, config.maxFallSpeed);
   const nextY = pet.y + vy * dt;
   const landing = groundBelow(world.surfaces, pet.x, pet.y);
@@ -64,7 +62,7 @@ export function fall(pet: Pet, world: WorldView, dt: number, config: MotionConfi
  * franchirait mille pixels en une frame. On vérifie qu'une surface existe toujours À
  * CETTE HAUTEUR — se fier à un sol en dessous ferait grimper vers une fenêtre fermée.
  */
-export function climb(pet: Pet, world: WorldView, dt: number, config: MotionConfig): Pet {
+function climb(pet: Pet, world: WorldView, dt: number, config: MotionConfig): Pet {
   const target = pet.climbTo;
   const stillThere =
     target !== null &&

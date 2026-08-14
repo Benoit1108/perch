@@ -8,7 +8,7 @@ import type { Point, Rect } from './geometry.js';
  * deux à false — laisser passer les clics coupe la seule source de position dont
  * dispose XWayland. Voir spike/README.md, constat 7 ter.
  */
-export interface SensorCapabilities {
+interface SensorCapabilities {
   /** Le backend peut-il donner la position globale du curseur ? */
   readonly pointer: boolean;
   /** Le backend peut-il énumérer la géométrie des fenêtres ? */

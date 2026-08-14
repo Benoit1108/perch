@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { contains, subtract } from './intervals.js';
+import { subtract } from './intervals.js';
 
 const base = { start: 0, end: 100 };
 
@@ -76,14 +76,5 @@ describe('subtract', () => {
       { start: 40, end: 100 },
     ]);
     expect(result).toEqual([]);
-  });
-});
-
-describe('contains', () => {
-  it('inclut la borne basse et exclut la haute', () => {
-    expect(contains(base, 0)).toBe(true);
-    expect(contains(base, 99)).toBe(true);
-    expect(contains(base, 100)).toBe(false);
-    expect(contains(base, -1)).toBe(false);
   });
 });

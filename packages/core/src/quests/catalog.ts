@@ -24,15 +24,6 @@ export interface QuestSignals {
   readonly tasksDone: number;
 }
 
-export const noSignals: QuestSignals = {
-  activeMs: 0,
-  focusMs: 0,
-  distinctApps: 0,
-  breaks: 0,
-  commits: 0,
-  tasksDone: 0,
-};
-
 export interface QuestDefinition {
   readonly id: string;
   readonly profile: QuestProfile;

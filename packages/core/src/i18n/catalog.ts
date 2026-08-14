@@ -21,12 +21,38 @@ const fr = {
   'quest.oneCommit': 'Un commit',
   'quest.fiveTasks': 'Cinq tâches cochées',
 
+  'chooser.title': 'Choisis ton compagnon',
+  'chooser.intro': "Il vivra sur ton bureau et grandira avec toi. Ce choix n'est pas définitif.",
+  'chooser.empty': 'Aucune créature installée pour le moment.',
+
+  'settings.privacy': 'Tout reste sur cette machine. Aucun compte, aucun serveur.',
+  'settings.language': 'Langue',
+  'settings.systemLanguage': 'Celle du système',
+  'settings.companion': 'Compagnon',
+  'settings.changeCompanion': 'Changer de compagnon',
+  'settings.companionHelp':
+    "L'expérience acquise est conservée : seule l'apparence change, au stade correspondant au niveau déjà atteint.",
+  'settings.private': 'Mode privé',
+  'settings.privateToggle': 'Suspendre toute mesure',
+  'settings.privateHelp':
+    "Le compagnon s'endort et cesse de progresser. Aucune activité n'est mesurée tant que la case est cochée.",
+  'settings.repos': 'Dépôts surveillés',
+  'settings.reposHelp':
+    "Ajoutés avec « npm run watch » depuis l'intérieur d'un dépôt. Seuls les identifiants de commit sont lus — jamais un message, un nom de fichier ou un diff.",
+  'settings.noRepos': 'Aucun dépôt surveillé.',
+  'settings.tasks': 'Tâches du jour',
+  'settings.noTasks': 'Aucune tâche.',
+  'settings.newTask': 'Ajouter une tâche…',
+  'settings.add': 'Ajouter',
+  'settings.remove': 'retirer',
+  'settings.saved': 'Enregistré.',
+  'settings.refused': 'Refusé : {reason}',
+
   'speech.levelUp': 'Niveau {level} !',
+  'speech.evolved': 'Je deviens {name} !',
   'speech.questDone': 'Quête accomplie !',
   'speech.greetMorning': 'Bonjour.',
   'speech.idle': 'Tu es toujours là ?',
-  'speech.grabbed': 'Hé !',
-  'speech.dropped': 'Ouf.',
   'speech.chatter': 'Belle journée pour travailler.',
   'speech.sleepy': 'Je vais faire un somme…',
 } as const;
@@ -40,12 +66,38 @@ const en: Record<keyof typeof fr, string> = {
   'quest.oneCommit': 'One commit',
   'quest.fiveTasks': 'Five tasks done',
 
+  'chooser.title': 'Choose your companion',
+  'chooser.intro': 'It will live on your desktop and grow with you. You can change this later.',
+  'chooser.empty': 'No creature installed yet.',
+
+  'settings.privacy': 'Everything stays on this machine. No account, no server.',
+  'settings.language': 'Language',
+  'settings.systemLanguage': "The system's",
+  'settings.companion': 'Companion',
+  'settings.changeCompanion': 'Change companion',
+  'settings.companionHelp':
+    'Experience is kept: only the appearance changes, to the stage matching the level already reached.',
+  'settings.private': 'Private mode',
+  'settings.privateToggle': 'Suspend all measurement',
+  'settings.privateHelp':
+    'The companion falls asleep and stops progressing. No activity is measured while this is ticked.',
+  'settings.repos': 'Watched repositories',
+  'settings.reposHelp':
+    'Added with “npm run watch” from inside a repository. Only commit identifiers are read — never a message, a file name or a diff.',
+  'settings.noRepos': 'No repository watched.',
+  'settings.tasks': "Today's tasks",
+  'settings.noTasks': 'No task.',
+  'settings.newTask': 'Add a task…',
+  'settings.add': 'Add',
+  'settings.remove': 'remove',
+  'settings.saved': 'Saved.',
+  'settings.refused': 'Refused: {reason}',
+
   'speech.levelUp': 'Level {level}!',
+  'speech.evolved': "I'm becoming {name}!",
   'speech.questDone': 'Quest complete!',
   'speech.greetMorning': 'Morning.',
   'speech.idle': 'Still there?',
-  'speech.grabbed': 'Hey!',
-  'speech.dropped': 'Phew.',
   'speech.chatter': 'Nice day for getting things done.',
   'speech.sleepy': 'Time for a nap…',
 };

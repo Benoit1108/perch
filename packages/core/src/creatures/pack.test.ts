@@ -5,8 +5,8 @@ import { describe, expect, it } from 'vitest';
 import type { CreatureLine } from './manifest.js';
 import {
   InvalidPackError,
+  evolutionBetween,
   findLine,
-  nextEvolutionLevel,
   parseCreaturePack,
   stageForLevel,
 } from './pack.js';
@@ -80,6 +80,28 @@ describe('parseCreaturePack', () => {
     expect(() => parseCreaturePack(withLines(lines))).toThrow(InvalidPackError);
   });
 
+  // Un manifeste est une donnée EXTERNE : le pack par défaut est téléchargé, et un pack
+  // tiers s'installe en déposant un dossier. Un chemin remontant serait lu tel quel par
+  // le chargeur d'images et servi au rendu.
+  it.each(['../../../etc/passwd', '/etc/passwd', 'a/../../b.png', 'sprite.png\u0000.txt'])(
+    'refuse « %s » comme chemin de sprite',
+    (sprite) => {
+      const lines = [{ id: 'alpha', stages: [{ id: 'a', name: 'A', sprite, fromLevel: 1 }] }];
+      expect(() => parseCreaturePack(withLines(lines))).toThrow();
+    }
+  );
+
+  it("refuse un fichier dont l'extension n'est pas une image", () => {
+    const lines = [
+      { id: 'alpha', stages: [{ id: 'a', name: 'A', sprite: 'charge.svg', fromLevel: 1 }] },
+    ];
+    expect(() => parseCreaturePack(withLines(lines))).toThrow();
+  });
+
+  it('accepte un stade sans animation et lui donne des clips vides', () => {
+    expect(stageForLevel(firstLine(), 1).clips).toEqual({});
+  });
+
   it('refuse deux lignées de même identifiant', () => {
     const line = {
       id: 'alpha',
@@ -117,26 +139,35 @@ describe('stageForLevel', () => {
   });
 });
 
-describe('nextEvolutionLevel', () => {
-  it.each<[number, number]>([
-    [1, 16],
-    [15, 16],
-    [16, 36],
-    [35, 36],
-  ])('depuis le niveau %i donne %i', (level, expected) => {
-    expect(nextEvolutionLevel(firstLine(), level)).toBe(expected);
+describe('evolutionBetween', () => {
+  it('signale le franchissement exact du palier', () => {
+    expect(evolutionBetween(firstLine(), 15, 16)?.id).toBe('alpha-2');
   });
 
-  it('renvoie null au dernier stade', () => {
-    expect(nextEvolutionLevel(firstLine(), 36)).toBeNull();
-    expect(nextEvolutionLevel(firstLine(), 100)).toBeNull();
+  // Cas réel : une quête achevée peut rendre plusieurs niveaux d'un coup, et une machine
+  // laissée éteinte deux semaines rattrape son retard au démarrage.
+  it('signale une évolution même en sautant plusieurs niveaux', () => {
+    expect(evolutionBetween(firstLine(), 1, 40)?.id).toBe('alpha-3');
+  });
+
+  it("ne signale rien quand l'apparence ne change pas", () => {
+    expect(evolutionBetween(firstLine(), 1, 15)).toBeNull();
+    expect(evolutionBetween(firstLine(), 16, 35)).toBeNull();
+  });
+
+  it('ne signale rien quand le niveau ne monte pas', () => {
+    expect(evolutionBetween(firstLine(), 16, 16)).toBeNull();
+    expect(evolutionBetween(firstLine(), 40, 1)).toBeNull();
   });
 });
 
-describe('pack de test livré', () => {
+describe('pack de test', () => {
+  // Il vit dans `test-fixtures/` et NON dans `packs/` : ce dernier est lu à l'exécution,
+  // et une fixture sans images y apparaissait dans la fenêtre de choix, à côté des vraies
+  // créatures. La choisir donnait un compagnon sans sprite, définitivement.
   it('reste valide', () => {
     const manifestPath = fileURLToPath(
-      new URL('../../../../packs/test-pack/manifest.json', import.meta.url)
+      new URL('../../test-fixtures/test-pack/manifest.json', import.meta.url)
     );
     const raw: unknown = JSON.parse(readFileSync(manifestPath, 'utf8'));
     const pack = parseCreaturePack(raw);

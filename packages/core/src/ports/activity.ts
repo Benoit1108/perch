@@ -9,8 +9,14 @@
  * fausse : le système sait déjà répondre sans les exposer.
  */
 export interface ActivityPort {
-  /** Millisecondes écoulées depuis la dernière interaction de l'utilisateur. */
-  idleMs(): Promise<number>;
+  /**
+   * Millisecondes écoulées depuis la dernière interaction de l'utilisateur.
+   *
+   * `null` quand la plateforme ne sait PAS répondre — ce qui n'est pas la même chose
+   * qu'une longue inactivité. Confondre les deux endort le compagnon pour toujours sur
+   * toute machine dépourvue de moniteur d'inactivité, contre l'invariant I7.
+   */
+  idleMs(): Promise<number | null>;
 
   /**
    * Identifiant de l'application au premier plan, pour le bonus de concentration.

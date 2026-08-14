@@ -149,6 +149,14 @@ stage "packages/core/src/violation-long.ts" \
   "$(for i in $(seq 1 220); do echo "export const l$i = $i;"; done)"
 expect_rejected "max-lines (200)" "max-lines" "$ESLINT packages/core/src/violation-long.ts"
 
+# La limite de taille ne vaut que si elle couvre AUSSI ce qu'ESLint ne lit pas : une page
+# de rendu avait dérivé à 361 lignes sans que rien ne bronche.
+stage "packages/app/src/renderer/violation-longue.css" \
+  "$(for i in $(seq 1 220); do echo ".r$i { color: red; }"; done)"
+git add -N packages/app/src/renderer/violation-longue.css >/dev/null 2>&1
+expect_rejected "max-lines (200) hors TypeScript" "max-lines" "node scripts/check-length.mjs"
+git rm --cached -q packages/app/src/renderer/violation-longue.css >/dev/null 2>&1 || true
+
 # ── Invariant I5 : aucun sprite committé ──────────────────────────────────────────
 # Mécanisme différent : ce n'est pas un outil qui protège, c'est .gitignore. C'est
 # pourtant l'invariant dont les conséquences sont juridiques.

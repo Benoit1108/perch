@@ -5,8 +5,21 @@ coverage/
 *.log
 
 # INVARIANT I5 — aucun sprite committé, jamais.
-# Les packs de créatures sont téléchargés à l'installation.
-packs/*/sprites/
+#
+# Les packs sont FABRIQUÉS par `npm run pack:fetch`, à partir de la recette
+# `scripts/pack-source.json` : le dépôt contient la liste des espèces et le script qui va
+# les chercher, jamais une seule image. Le manifeste généré est donc ignoré lui aussi.
+#
+# `packs/` est ENTIÈREMENT fabriqué : rien n'y est versionné, pas même un manifeste. La
+# fixture des tests vit dans `packages/core/test-fixtures/`, hors de portée du dossier lu
+# à l'exécution — une fixture sans images y apparaissait dans la fenêtre de choix, à côté
+# des vraies créatures.
+#
+# Ancré à la racine par le `/` initial : sans lui, `packages/app/src/packs/` disparaîtrait
+# aussi — pas pour git, qui ancre déjà les motifs contenant une barre, mais pour les
+# outils qui relisent ce fichier avec leur propre lecteur. knip y perdait tout un dossier
+# de code source et signalait comme morts des exports parfaitement utilisés.
+/packs/
 spike/assets/
 
 # Spike S0 : le code source est conservé pour ses constats, pas ses dépendances.

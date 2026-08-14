@@ -29,8 +29,11 @@ const QuestStateSchema = z.object({
 });
 
 const CreatureStateSchema = z.object({
-  packId: z.string().min(1),
-  lineId: z.string().min(1),
+  // Vides tant qu'aucun pack n'est installé : le dépôt n'en contient aucun (invariant I5)
+  // et l'application doit démarrer quand même, avec un marqueur sans nom. Exiger une
+  // valeur obligerait à inventer un identifiant de créature en dur, contre l'invariant I9.
+  packId: z.string(),
+  lineId: z.string(),
   level: z.number().int().min(1).max(100),
   // Fractionnaire : l'expérience s'accumule par pas d'une minute, et l'arrondi n'a lieu
   // qu'à l'affichage. Arrondir à chaque pas perdrait une fraction à chaque tick.

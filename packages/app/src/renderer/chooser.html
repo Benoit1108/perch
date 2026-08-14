@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <!-- `img-src data:` et rien d'autre : les portraits arrivent encodés par IPC, cette
+         page n'a accès ni au disque ni au réseau. Aucune source `unsafe-inline` : les noms
+         de créatures viennent d'un manifeste, donc d'une donnée qu'on n'a pas écrite. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; img-src data:; style-src 'self'; script-src 'self'"
+    />
+    <title>Perch</title>
+    <link rel="stylesheet" href="theme.css" />
+    <link rel="stylesheet" href="chooser.css" />
+  </head>
+  <body>
+    <h1 id="titre"></h1>
+    <p class="sous" id="intro"></p>
+    <div id="grille"></div>
+    <p id="vide" hidden></p>
+
+    <script src="chooser.js"></script>
+  </body>
+</html>

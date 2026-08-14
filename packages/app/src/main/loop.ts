@@ -1,5 +1,21 @@
-import type { MotionConfig, Pet, Point, Rect, SensorPort, Surface } from '@perch/core';
-import { buildSurfaces, defaultMotionConfig, isFullscreen, newPet, step } from '@perch/core';
+import type {
+  ActivityPort,
+  Mood,
+  MotionConfig,
+  Pet,
+  Point,
+  Rect,
+  SensorPort,
+  Surface,
+} from '@perch/core';
+import {
+  buildSurfaces,
+  defaultMotionConfig,
+  isFullscreen,
+  moodFor,
+  newPet,
+  step,
+} from '@perch/core';
 
 import type { Voice } from './voice.js';
 
@@ -28,6 +44,8 @@ export interface LoopOptions {
   readonly debug: boolean;
   readonly config?: MotionConfig;
   readonly voice?: Voice;
+  /** Source d'inactivité. Absente, le compagnon ne dort jamais. */
+  readonly activity?: ActivityPort;
   /** L'utilisateur est-il en période de concentration ? Le compagnon se tait alors (I6). */
   readonly isFocused?: () => boolean;
 }
@@ -89,6 +107,40 @@ function createPointerFeed(sensors: SensorPort): () => Point | null {
 }
 
 /**
+ * Suit l'inactivité de l'utilisateur SANS bloquer la frame.
+ *
+ * Sa valeur était câblée à zéro : le compagnon ne pouvait donc jamais s'endormir, et tout
+ * ce qui en dépend — l'état `sommeil`, son animation ralentie, son bâillement — restait
+ * inatteignable. Sans capteur d'activité branché, on garde l'ancien comportement : un
+ * compagnon toujours éveillé vaut mieux qu'un compagnon endormi à tort.
+ */
+function createIdleFeed(activity: ActivityPort | undefined): () => number {
+  if (activity === undefined) return () => 0;
+
+  let latest = 0;
+  let pending = false;
+
+  return () => {
+    if (!pending) {
+      pending = true;
+      void activity
+        .idleMs()
+        .then((value) => {
+          // `null` — plateforme sans moniteur d'inactivité — vaut ÉVEILLÉ, pas absent.
+          latest = value ?? 0;
+        })
+        .finally(() => {
+          pending = false;
+        });
+    }
+    return latest;
+  };
+}
+
+/** Journée courante, au format du reste de l'application. */
+const today = (): string => new Date().toISOString().slice(0, 10);
+
+/**
  * Boucle d'animation.
  *
  * Elle ne décide de rien : elle lit les capteurs, confie l'état à `core`, et transmet le
@@ -105,6 +157,7 @@ export function startLoop(options: LoopOptions): () => void {
   let fullscreen = false;
   let bubble: string | null = null;
   let bubbleUntil = 0;
+  let mood: Mood | null = null;
 
   const refreshGeometry = async (): Promise<void> => {
     const [monitors, windows] = await Promise.all([sensors.monitors(), sensors.windows()]);
@@ -129,16 +182,22 @@ export function startLoop(options: LoopOptions): () => void {
   };
 
   const readPointer = createPointerFeed(sensors);
+  const readIdle = createIdleFeed(options.activity);
 
   const frame = async (): Promise<void> => {
     tick += 1;
     if (tick % GEOMETRY_EVERY === 1) await refreshGeometry();
 
     const pointer = readPointer();
-    pet = step(pet, { surfaces, pointer, idleMs: 0, nowMs: Date.now() }, FRAME_MS, config);
+    const idleMs = readIdle();
+    pet = step(pet, { surfaces, pointer, idleMs, nowMs: Date.now() }, FRAME_MS, config);
 
     const now = tick * FRAME_MS;
     if (tick % VOICE_EVERY === 0 && options.voice !== undefined) {
+      const humeur = moodFor(mood, { state: pet.state, idleMs, dayKey: today() });
+      mood = { state: pet.state, idleMs, dayKey: today() };
+      if (humeur !== null) options.voice.say(humeur);
+
       const dit = options.voice.pull({
         focused: options.isFocused?.() ?? false,
         fullscreen,

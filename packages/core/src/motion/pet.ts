@@ -13,9 +13,16 @@ import type { Surface } from '../world/surfaces.js';
  * là où il y a une surface, donc jamais au milieu de l'écran, donc jamais vraiment avec
  * son utilisateur.
  */
-export type PetMode = 'suit' | 'pose';
+type PetMode = 'suit' | 'pose';
 
-export type PetState = 'repos' | 'marche' | 'escalade' | 'chute' | 'suit' | 'attrape' | 'sommeil';
+/**
+ * Les états sont une LISTE avant d'être un type : le rendu doit pouvoir les parcourir pour
+ * recevoir une table d'animations complète, et un état ajouté sans son animation serait
+ * une créature figée sans que rien ne le signale.
+ */
+export const PET_STATES = ['repos', 'marche', 'escalade', 'chute', 'suit', 'sommeil'] as const;
+
+export type PetState = (typeof PET_STATES)[number];
 
 /** `x` et `y` désignent les PIEDS du compagnon, pas son coin haut-gauche. */
 export interface Pet {

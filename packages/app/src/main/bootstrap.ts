@@ -8,7 +8,7 @@ export interface Composition {
 }
 
 /** Ce qui est arrivé à l'état précédent. */
-export type Recovery =
+type Recovery =
   | { readonly kind: 'fresh' }
   | { readonly kind: 'restored' }
   | { readonly kind: 'recovered'; readonly reason: string; readonly archivedAt: string | null };

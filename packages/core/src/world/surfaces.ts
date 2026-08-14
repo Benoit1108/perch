@@ -3,7 +3,7 @@ import type { Interval } from './intervals.js';
 import { subtract } from './intervals.js';
 
 /** D'où vient une surface. Le rendu et le comportement peuvent en dépendre. */
-export type SurfaceKind = 'ecran' | 'fenetre';
+type SurfaceKind = 'ecran' | 'fenetre';
 
 /** Un segment horizontal sur lequel le compagnon peut tenir. `[start, end)` en x. */
 export interface Surface {

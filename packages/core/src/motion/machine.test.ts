@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { Rect } from '../ports/geometry.js';
 import { buildSurfaces } from '../world/surfaces.js';
-import { nearestFoothold, release, step } from './machine.js';
+import { step } from './machine.js';
 import type { Pet, WorldView } from './pet.js';
 import { defaultMotionConfig, newPet } from './pet.js';
 
@@ -259,28 +259,24 @@ describe('perchage sur les fenêtres', () => {
   });
 });
 
-describe('saisie à la souris', () => {
-  it('reste immobile tant qu’il est attrapé', () => {
-    const attrape = pet({ state: 'attrape', y: 300 });
-    expect(step(attrape, world({ pointer: { x: 10, y: 10 } }), 16, config)).toEqual(attrape);
+// Le filet de sécurité, éprouvé par le chemin réel plutôt que par sa fonction interne :
+// c'est `step` qui doit ramener un compagnon perdu, pas un détail d'implémentation.
+describe('compagnon hors de toute surface', () => {
+  it('reste en place quand il n’existe aucune surface', () => {
+    const perdu = pet({ x: 42, y: 42, state: 'chute' });
+    const apres = step(perdu, { surfaces: [], pointer: null, idleMs: 0, nowMs: 0 }, 16, config);
+
+    expect(apres.x).toBe(42);
+    expect(apres.state).toBe('repos');
   });
 
-  it('retombe une fois relâché', () => {
-    const relache = release(pet({ state: 'attrape', y: 300 }));
-    expect(relache.state).toBe('chute');
-    expect(relache.mode).toBe('pose');
-  });
-});
+  // Arrive pour de vrai : un écran débranché sous ses pieds le laisse hors du bureau.
+  it('est ramené sur la surface la plus proche', () => {
+    const dehors = pet({ x: -500, y: 1080, state: 'chute' });
+    const apres = step(dehors, { surfaces, pointer: null, idleMs: 0, nowMs: 0 }, 16, config);
 
-describe('nearestFoothold', () => {
-  it('renvoie null sans aucune surface', () => {
-    expect(nearestFoothold([], 0, 0)).toBeNull();
-  });
-
-  it('ramène dans les bornes du segment le plus proche', () => {
-    const point = nearestFoothold(surfaces, -500, 1080);
-    expect(point?.x).toBe(0);
-    expect(point?.y).toBe(1080);
+    expect(apres.x).toBe(0);
+    expect(apres.y).toBe(1080);
   });
 });
 

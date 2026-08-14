@@ -8,4 +8,12 @@ contextBridge.exposeInMainWorld('perch', {
       callback(payload);
     });
   },
+  // L'apparence arrive par ÉVÉNEMENT — démarrage, choix, évolution — et jamais dans la
+  // boucle d'animation : les images pèsent quelques dizaines de kilo-octets, et les
+  // envoyer soixante fois par seconde saturerait le canal pour rien.
+  onCreature: (callback) => {
+    ipcRenderer.on('perch:creature', (_event, payload) => {
+      callback(payload);
+    });
+  },
 });

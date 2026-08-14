@@ -1,0 +1,181 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  user-select: none;
+}
+
+/* PAS de `cursor: none` : l'overlay couvre tout le bureau, masquer le curseur le
+   masquerait partout. Piège rencontré en S0. */
+
+/* Le point d'ancrage est aux PIEDS du compagnon : le moteur raisonne en surfaces, et une
+   marge haute d'une hauteur complète pose le sprite dessus. */
+#pet {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 96px;
+  height: 96px;
+  margin-left: -48px;
+  margin-top: -96px;
+  will-change: transform;
+  transform: translate3d(-200px, -200px, 0);
+}
+
+#corps {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom center;
+  /* Ces sprites font 96 px de côté : un lissage bilinéaire les rendrait flous. */
+  image-rendering: pixelated;
+  filter: drop-shadow(0 3px 4px rgb(0 0 0 / 35%));
+}
+
+#corps[hidden],
+#repli[hidden],
+#pet[hidden],
+#hud[hidden] {
+  display: none;
+}
+
+/* Marqueur de repli, visible tant qu'aucun pack n'est installé — le dépôt ne contient
+   aucun sprite (invariant I5). Mieux vaut une forme sans nom qu'un compagnon invisible. */
+#repli {
+  position: absolute;
+  left: 24px;
+  bottom: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 46% 46% 40% 40%;
+  background: linear-gradient(160deg, #7b6bf0, #4b3fb0);
+  box-shadow: 0 3px 10px rgb(0 0 0 / 35%);
+}
+
+#repli::before,
+#repli::after {
+  content: '';
+  position: absolute;
+  top: 34%;
+  width: 7px;
+  height: 9px;
+  border-radius: 50%;
+  background: #fdfdff;
+}
+
+#repli::before {
+  left: 24%;
+}
+
+#repli::after {
+  right: 24%;
+}
+
+#bulle {
+  position: absolute;
+  bottom: 104px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font:
+    600 13px/1.3 system-ui,
+    sans-serif;
+  color: #2b2118;
+  background: #fdf6d8;
+  border: 2px solid #2b2118;
+  border-radius: 10px;
+  padding: 5px 10px;
+  opacity: 0;
+  transition: opacity 0.25s;
+  pointer-events: none;
+}
+
+#bulle.visible {
+  opacity: 1;
+}
+
+#pet[data-etat='sommeil'] #corps,
+#pet[data-etat='sommeil'] #repli {
+  filter: saturate(0.5) brightness(0.8);
+}
+
+#pet[data-etat='chute'] #repli {
+  border-radius: 50% 50% 34% 34%;
+}
+
+/* Mise en scène de l'évolution. Le halo est un élément SÉPARÉ : appliquer la lueur au
+   sprite lui-même effacerait ses couleurs au moment précis où l'on veut faire découvrir
+   la nouvelle forme. */
+#eclat {
+  position: absolute;
+  inset: -40px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(255 252 230 / 95%) 0%, rgb(255 240 170 / 0%) 70%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+#pet.evolue #eclat {
+  animation: eclat 1.8s ease-out;
+}
+
+#pet.evolue #corps {
+  animation: grandit 1.8s ease-in-out;
+}
+
+@keyframes eclat {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+
+@keyframes grandit {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.18) translateY(-6px);
+  }
+  60% {
+    transform: scale(0.94);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+#hud {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  font:
+    12px/1.5 ui-monospace,
+    monospace;
+  color: #e8e4f5;
+  background: rgb(16 14 26 / 82%);
+  border: 1px solid rgb(160 150 200 / 40%);
+  border-radius: 6px;
+  padding: 8px 12px;
+  white-space: pre;
+}
+
+#surfaces {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}

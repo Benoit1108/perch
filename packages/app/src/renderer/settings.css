@@ -1,0 +1,86 @@
+section {
+  background: var(--carte);
+  border: 1px solid var(--trait);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  border-top: 1px solid var(--trait);
+}
+
+li span.chemin {
+  font-family: ui-monospace, monospace;
+  font-size: 0.82rem;
+  color: var(--encre-2);
+  overflow-wrap: anywhere;
+}
+
+li span.fait {
+  text-decoration: line-through;
+  color: var(--encre-2);
+}
+
+button {
+  font: inherit;
+  color: var(--encre);
+  background: var(--fond);
+  border: 1px solid var(--trait);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: var(--accent);
+}
+
+button.retirer {
+  color: var(--danger);
+  border-color: transparent;
+  background: none;
+}
+
+input[type='text'],
+select {
+  font: inherit;
+  color: var(--encre);
+  background: var(--fond);
+  border: 1px solid var(--trait);
+  border-radius: 6px;
+  padding: 5px 8px;
+}
+
+input[type='text'] {
+  flex: 1;
+}
+
+.ligne {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+#etat {
+  color: var(--encre-2);
+  font-size: 0.86rem;
+  min-height: 1.4em;
+}

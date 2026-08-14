@@ -37,8 +37,3 @@ export function subtract(base: Interval, holes: readonly Interval[]): Interval[]
 
   return result.filter((interval) => !isEmpty(interval));
 }
-
-/** `true` si `value` tombe dans `[start, end)`. */
-export function contains(interval: Interval, value: number): boolean {
-  return value >= interval.start && value < interval.end;
-}

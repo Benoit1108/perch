@@ -5,21 +5,23 @@ import { createGnomeActivity } from './gnome.js';
 /**
  * Absence de source d'activité.
  *
- * Renvoie une inactivité franche plutôt que zéro : sans mesure, prétendre que
- * l'utilisateur est actif ferait progresser la créature sur une machine abandonnée. Mieux
- * vaut ne rien accorder que d'accorder à tort.
+ * `null` et non une inactivité franche : les deux se ressemblent mais ne veulent pas dire
+ * la même chose. L'expérience s'en tient à la prudence — sans mesure, rien n'est accordé,
+ * plutôt que d'accorder à tort sur une machine abandonnée. L'ANIMATION, elle, ne doit pas
+ * en conclure que personne n'est là : le compagnon dormirait à jamais sur toute machine
+ * sans moniteur d'inactivité, alors que l'invariant I7 promet qu'il y vit quand même.
  */
 const noActivity: ActivityPort = {
-  idleMs: () => Promise.resolve(Number.MAX_SAFE_INTEGER),
+  idleMs: () => Promise.resolve(null),
   focusedApp: () => Promise.resolve(null),
 };
 
 /**
  * Enveloppe une source pour respecter le mode privé.
  *
- * Le mode privé n'atténue pas la mesure : il la SUSPEND. Renvoyer une inactivité franche
- * suffit — le compagnon s'endort et cesse de progresser, sans qu'aucun autre module ait
- * besoin de connaître ce réglage.
+ * Le mode privé n'atténue pas la mesure : il la SUSPEND. Ici l'inactivité franche est le
+ * bon signal, et non `null` : on veut précisément que le compagnon s'endorme et cesse de
+ * progresser, sans qu'aucun autre module ait besoin de connaître ce réglage.
  */
 export function withPrivacy(sensors: ActivityPort, isPrivate: () => boolean): ActivityPort {
   return {

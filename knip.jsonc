@@ -16,6 +16,13 @@
   "ignoreExportsUsedInFile": true,
 
   "workspaces": {
+    "packages/app": {
+      // Les scripts des pages de rendu sont atteints par une balise `<script src>`, que
+      // knip ne suit pas : sans cette déclaration, ils passent pour des fichiers morts.
+      // Les y avoir sortis du HTML est ce qui les soumet enfin aux règles de qualité.
+      "entry": ["src/renderer/*.js", "src/renderer/*.cjs"],
+    },
+
     "packages/shell": {
       // GNOME charge l'extension via son `metadata.json`, que knip ne sait pas lire :
       // sans cette déclaration, le point d'entrée passe pour un fichier mort.

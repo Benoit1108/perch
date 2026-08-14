@@ -15,8 +15,15 @@ export type {
   StorageRead,
 } from './ports/index.js';
 
-export type { CreaturePack } from './creatures/manifest.js';
-export { parseCreaturePack } from './creatures/pack.js';
+export type {
+  Clip,
+  ClipName,
+  CreatureLine,
+  CreaturePack,
+  CreatureStage,
+} from './creatures/manifest.js';
+export { evolutionBetween, findLine, parseCreaturePack, stageForLevel } from './creatures/pack.js';
+export { PLAYBACK } from './creatures/clips.js';
 
 export type { PerchState } from './state/schema.js';
 export { createInitialState, readState } from './state/schema.js';
@@ -34,13 +41,15 @@ export type { Evidence } from './quests/evidence.js';
 export { noEvidence } from './quests/evidence.js';
 
 export type { Locale } from './i18n/catalog.js';
-export { resolveLocale, translate } from './i18n/catalog.js';
+export { MESSAGE_KEYS, resolveLocale, translate } from './i18n/catalog.js';
 
 export type { SpeechConfig, SpeechRequest, SpeechState } from './speech/scheduler.js';
 export { defaultSpeechConfig, emptySpeech, pull, say } from './speech/scheduler.js';
+export type { Mood } from './speech/moods.js';
+export { moodFor } from './speech/moods.js';
 
 export { isFullscreen } from './world/surfaces.js';
 
-export type { MotionConfig, Pet } from './motion/pet.js';
-export { defaultMotionConfig, newPet } from './motion/pet.js';
+export type { MotionConfig, Pet, PetState } from './motion/pet.js';
+export { defaultMotionConfig, newPet, PET_STATES } from './motion/pet.js';
 export { step } from './motion/machine.js';

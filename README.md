@@ -26,10 +26,16 @@ répondent à une seule question : depuis combien de temps l'utilisateur n'a rie
 ## Prise en main
 
 ```bash
-nvm use            # Node 24 LTS
+nvm use              # Node 24 LTS
 npm install
-npm run health     # format, lint, types, architecture, code mort, tests
+npm run pack:fetch   # fabrique le pack de créatures (Python 3 + Pillow)
+npm run health       # format, lint, types, architecture, code mort, tests
 ```
+
+**Aucune image n'est versionnée ici.** Le dépôt contient la liste des espèces
+(`scripts/pack-source.json`) et le script qui va chercher leurs sprites ; `pack:fetch` les
+télécharge, les découpe en frames et écrit le manifeste. Sans cette étape l'application
+démarre quand même : le compagnon s'affiche alors sous la forme d'un marqueur sans nom.
 
 ## Développement
 
@@ -44,6 +50,7 @@ npm run health     # format, lint, types, architecture, code mort, tests
 | `npm start`                 | Lance le compagnon                                 |
 | `npm run stop`              | L'arrête (fichier PID — ne dépend pas du clavier)  |
 | `npm run setup:sandbox`     | Corrige les permissions d'Electron, une seule fois |
+| `npm run pack:fetch`        | Fabrique le pack de créatures par défaut           |
 
 ## Structure
 

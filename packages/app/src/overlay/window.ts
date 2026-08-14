@@ -15,6 +15,16 @@ import { boundingBox } from '@perch/core';
 export class Overlay {
   private readonly window: BrowserWindow;
   private bounds: Rect = { x: 0, y: 0, width: 1, height: 1 };
+  /**
+   * Derniers messages à rejouer dès que la page est prête.
+   *
+   * Sans eux, l'apparence du compagnon se perdait au démarrage : elle est envoyée UNE
+   * fois, quelques dizaines de millisecondes après la création de la fenêtre, alors que
+   * la page met quelques centaines de millisecondes à brancher ses écouteurs. Le
+   * compagnon restait un marqueur sans nom jusqu'à sa prochaine évolution — des jours.
+   */
+  private readonly retained = new Map<string, unknown>();
+  private loaded = false;
 
   constructor() {
     this.bounds = this.desktopBounds();
@@ -44,6 +54,13 @@ export class Overlay {
     this.window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 
     this.window.webContents.on('did-finish-load', () => {
+      // Rejoué à CHAQUE chargement, pas seulement au premier : une page qui tombe et se
+      // relance repartirait sinon sans aucune créature.
+      this.loaded = true;
+      for (const [channel, payload] of this.retained) {
+        this.window.webContents.send(channel, payload);
+      }
+
       // Mutter écrête la taille à la CRÉATION : seule une reprise après affichage passe.
       //
       // Les clics traversants sont ré-appliqués INCONDITIONNELLEMENT ici. L'appel fait
@@ -144,9 +161,25 @@ export class Overlay {
     return this.bounds;
   }
 
+  /** Message volatil : perdu si la page n'est pas prête, et c'est sans importance. */
   send(channel: string, payload: unknown): void {
     if (this.window.isDestroyed()) return;
     this.window.webContents.send(channel, payload);
+  }
+
+  /**
+   * Message dont la perte se verrait : il est conservé et rejoué à chaque chargement.
+   *
+   * Réservé à ce qui n'est émis qu'à de rares occasions. Une frame perdue est remplacée
+   * seize millisecondes plus tard ; une apparence perdue ne revient qu'à l'évolution
+   * suivante.
+   */
+  retain(channel: string, payload: unknown, keep: unknown = payload): void {
+    // `keep` peut différer de ce qui part maintenant : une évolution est un ÉVÉNEMENT,
+    // son message porte donc une mise en scène qu'il ne faut surtout pas rejouer à chaque
+    // rechargement de page. Ce qu'on conserve décrit l'apparence, pas ce qui l'a amenée.
+    this.retained.set(channel, keep);
+    if (this.loaded) this.send(channel, payload);
   }
 
   destroy(): void {
