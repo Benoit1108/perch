@@ -74,15 +74,26 @@ class SensorsService {
    * On filtre sur NORMAL : docks, panneaux et menus ne sont pas des surfaces sur
    * lesquelles un compagnon doit pouvoir se percher.
    */
+  /**
+   * Fenêtres VISIBLES, c'est-à-dire celles du bureau actif.
+   *
+   * Sans ce filtre, les fenêtres de tous les espaces de travail étaient renvoyées : le
+   * compagnon se perchait alors sur le bord d'une fenêtre qui n'est pas à l'écran, et
+   * paraissait flotter dans le vide. Le défaut ne se voit qu'avec plusieurs bureaux.
+   */
   GetWindows(): RectTuple[] {
     const out: RectTuple[] = [];
 
     try {
+      const actif = global.workspace_manager.get_active_workspace();
+
       for (const actor of global.get_window_actors()) {
         const win = actor.meta_window;
         if (win === null) continue;
         if (win.get_window_type() !== Meta.WindowType.NORMAL) continue;
         if (win.minimized) continue;
+        // `located_on_workspace` couvre aussi les fenêtres présentes sur tous les bureaux.
+        if (!win.located_on_workspace(actif)) continue;
 
         const r = win.get_frame_rect();
         out.push([r.x, r.y, r.width, r.height]);

@@ -1,4 +1,4 @@
-import type { Point } from '../ports/geometry.js';
+import type { Point, Rect } from '../ports/geometry.js';
 import type { Surface } from '../world/surfaces.js';
 
 /**
@@ -95,6 +95,13 @@ export interface WorldView {
   readonly pointer: Point | null;
   /** Millisecondes depuis la dernière interaction de l'utilisateur. */
   readonly idleMs: number;
+  /**
+   * Union des écrans. `null` tant qu'aucun n'est connu.
+   *
+   * En vol, rien ne retient le compagnon : sans ces bornes il suit le curseur jusque hors
+   * du bureau et disparaît, en haut comme en bas.
+   */
+  readonly bounds: Rect | null;
   /** Horloge, pour dater l'immobilité du curseur. */
   readonly nowMs: number;
 }
@@ -139,6 +146,14 @@ export interface MotionConfig {
   readonly staminaMs: number;
   /** Impulsion verticale d'un petit saut. */
   readonly hopSpeed: number;
+  /**
+   * Encombrement du compagnon, en pixels.
+   *
+   * Sert UNIQUEMENT à le garder entièrement visible : le rendu l'ancre par les pieds, donc
+   * son corps occupe la hauteur au-dessus de sa position.
+   */
+  readonly bodyWidth: number;
+  readonly bodyHeight: number;
 }
 
 export const defaultMotionConfig: MotionConfig = {
@@ -163,4 +178,6 @@ export const defaultMotionConfig: MotionConfig = {
   restMaxMs: 35_000,
   staminaMs: 60_000,
   hopSpeed: 260,
+  bodyWidth: 96,
+  bodyHeight: 96,
 };

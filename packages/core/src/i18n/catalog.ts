@@ -64,6 +64,7 @@ const fr = {
   'speech.questDone': 'Quête accomplie !',
   'speech.greetMorning': 'Bonjour.',
   'speech.idle': 'Tu es toujours là ?',
+  'speech.newScene': 'Tiens, on change de décor.',
   'speech.chatter': 'Belle journée pour travailler.',
   'speech.sleepy': 'Je vais faire un somme…',
 } as const;
@@ -120,6 +121,7 @@ const en: Record<keyof typeof fr, string> = {
   'speech.questDone': 'Quest complete!',
   'speech.greetMorning': 'Morning.',
   'speech.idle': 'Still there?',
+  'speech.newScene': 'Oh, a change of scenery.',
   'speech.chatter': 'Nice day for getting things done.',
   'speech.sleepy': 'Time for a nap…',
 };

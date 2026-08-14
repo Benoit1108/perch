@@ -1,4 +1,6 @@
 import type { PetState } from '../motion/pet.js';
+import type { Rect } from '../ports/geometry.js';
+import { sceneChanged } from '../world/scene.js';
 import type { SpeechRequest } from './scheduler.js';
 
 /** Ce que le compagnon perçoit de la situation, à un instant donné. */
@@ -8,6 +10,8 @@ export interface Mood {
   readonly idleMs: number;
   /** Journée courante, pour reconnaître un nouveau jour. */
   readonly dayKey: string;
+  /** Fenêtres visibles. Leur remplacement en bloc trahit un changement de bureau. */
+  readonly windows: readonly Rect[];
 }
 
 /** Inactivité à partir de laquelle il s'inquiète — bien avant de s'endormir lui-même. */
@@ -35,6 +39,12 @@ export function moodFor(previous: Mood | null, current: Mood): SpeechRequest | n
 
   if (previous.state !== 'sommeil' && current.state === 'sommeil') {
     return { key: 'speech.sleepy', register: 'humeur' };
+  }
+
+  // Le décor entier remplacé : on vient de changer d'espace de travail, ou de fermer tout
+  // ce qui était ouvert. Le compagnon a de quoi s'étonner.
+  if (sceneChanged(previous.windows, current.windows)) {
+    return { key: 'speech.newScene', register: 'bavardage' };
   }
 
   // Au FRANCHISSEMENT du seuil seulement : tant que l'utilisateur reste absent, il se tait.

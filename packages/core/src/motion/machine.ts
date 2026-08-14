@@ -1,6 +1,43 @@
-import type { Point } from '../ports/geometry.js';
+import type { Point, Rect } from '../ports/geometry.js';
+import { bestPerch } from '../world/surfaces.js';
 import { settled } from './ground.js';
 import type { MotionConfig, Pet, WorldView } from './pet.js';
+
+/**
+ * Ramène le compagnon dans le bureau.
+ *
+ * En vol il suit le curseur sans rien pour le retenir : près d'un bord il sortait de
+ * l'écran, en haut comme en bas, et disparaissait purement et simplement. Le rendu l'ancre
+ * par les PIEDS, donc son corps occupe la hauteur au-dessus de sa position — d'où les
+ * bornes asymétriques.
+ */
+function inside(pet: Pet, bounds: Rect | null, config: MotionConfig): Pet {
+  if (bounds === null) return pet;
+
+  const marge = config.bodyWidth / 2;
+  const x = Math.min(Math.max(pet.x, bounds.x + marge), bounds.x + bounds.width - marge);
+  const y = Math.min(Math.max(pet.y, bounds.y + config.bodyHeight), bounds.y + bounds.height);
+
+  return x === pet.x && y === pet.y ? pet : { ...pet, x, y };
+}
+
+/**
+ * Le moment où il cesse de suivre : il SE POSE, il ne tombe pas.
+ *
+ * Sans cette étape il se laissait choir jusqu'au premier sol SOUS lui — le bas de l'écran,
+ * le plus souvent — avant de remonter vers le perchoir proche du curseur. Un plongeon de
+ * quatre cents pixels suivi d'une escalade de neuf cents, à chaque fois que la souris
+ * s'arrêtait. Il vise donc d'emblée la surface la plus proche de LUI, au-dessus comme en
+ * dessous.
+ */
+function land(pet: Pet, world: WorldView): Pet {
+  const perch = bestPerch(world.surfaces, pet.x, pet.y);
+
+  if (perch !== null && perch.y < pet.y) {
+    return { ...pet, vy: 0, state: 'escalade', climbTo: perch.y };
+  }
+  return { ...pet, vy: 0, state: 'chute', climbTo: null };
+}
 
 /** Le curseur a-t-il bougé depuis la dernière observation ? */
 function moved(previous: Point | null, current: Point, epsilon: number): boolean {
@@ -80,11 +117,11 @@ export function step(pet: Pet, world: WorldView, dtMs: number, config: MotionCon
   const tracked = updateMode(pet, world, config);
 
   if (tracked.mode === 'suit' && world.pointer !== null) {
-    return fly(tracked, world.pointer, dt, config);
+    return inside(fly(tracked, world.pointer, dt, config), world.bounds, config);
   }
 
-  // Il vient de voler : avant de reprendre sa vie au sol, il doit retrouver une surface.
-  const landing = pet.mode === 'suit' ? { ...tracked, state: 'chute' as const, vy: 0 } : tracked;
+  // Il vient de voler : avant de reprendre sa vie au sol, il doit rejoindre une surface.
+  const landing = pet.mode === 'suit' ? land(tracked, world) : tracked;
 
   return settled(landing, world, dt, config);
 }

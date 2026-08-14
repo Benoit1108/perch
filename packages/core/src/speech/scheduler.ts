@@ -42,7 +42,11 @@ export interface SpeechConfig {
 }
 
 export const defaultSpeechConfig: SpeechConfig = {
-  minIntervalMs: 15 * 60_000,
+  // Six minutes, et non quinze : à ce rythme-là le compagnon ne disait presque jamais
+  // rien, et tout le travail sur sa voix restait invisible. Les règles de silence — pendant
+  // la concentration, en plein écran — tiennent la promesse de l'invariant I6 bien mieux
+  // qu'un intervalle démesuré.
+  minIntervalMs: 6 * 60_000,
   maxQueue: 3,
   staleAfterMs: 2 * 60_000,
 };

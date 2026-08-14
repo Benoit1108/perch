@@ -119,6 +119,17 @@ adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 
 ### Fixed
 
+- **Le compagnon sortait de l'écran** en suivant un curseur près d'un bord, en haut comme
+  en bas : rien ne le retenait pendant le vol.
+- **Il plongeait jusqu'au sol à chaque arrêt de la souris**, puis remontait vers un
+  perchoir — quatre cents pixels de chute suivis de neuf cents d'escalade. Il vise
+  désormais d'emblée la surface la plus proche de lui.
+- **L'extension GNOME renvoyait les fenêtres de tous les espaces de travail.** En
+  multi-bureau, le compagnon se perchait sur le bord d'une fenêtre qui n'était pas à
+  l'écran. (Prend effet à la réouverture de session.)
+- Le compagnon ne disait presque jamais rien : le silence minimal passe de quinze à six
+  minutes, et il remarque désormais un changement d'espace de travail.
+
 - **L'application empaquetée mourait dès qu'on la lançait depuis un menu.** Sans personne
   au bout de sa sortie standard, son premier message levait `EPIPE` et Electron la figeait
   sur une boîte d'erreur. Le test de fumée coupe désormais la sortie exprès.

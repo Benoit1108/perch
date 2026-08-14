@@ -9,6 +9,7 @@ import type {
   Surface,
 } from '@perch/core';
 import {
+  boundingBox,
   buildSurfaces,
   defaultMotionConfig,
   isFullscreen,
@@ -141,6 +142,27 @@ function createIdleFeed(activity: ActivityPort | undefined): () => number {
 const today = (): string => new Date().toISOString().slice(0, 10);
 
 /**
+ * Ce que le compagnon a à dire maintenant, ou `null` s'il se tait.
+ *
+ * Deux étapes distinctes : la situation lui INSPIRE peut-être quelque chose (`moodFor`),
+ * et le cadenceur décide ensuite si c'est le moment de le dire. Un compagnon qui pense
+ * n'est pas un compagnon qui parle.
+ */
+function parle(
+  options: LoopOptions,
+  avant: Mood | null,
+  maintenant: Mood,
+  fullscreen: boolean
+): string | null {
+  if (options.voice === undefined) return null;
+
+  const humeur = moodFor(avant, maintenant);
+  if (humeur !== null) options.voice.say(humeur);
+
+  return options.voice.pull({ focused: options.isFocused?.() ?? false, fullscreen });
+}
+
+/**
  * Boucle d'animation.
  *
  * Elle ne décide de rien : elle lit les capteurs, confie l'état à `core`, et transmet le
@@ -152,6 +174,8 @@ export function startLoop(options: LoopOptions): () => void {
 
   let pet: Pet = newPet(0, 0);
   let surfaces: Surface[] = [];
+  let bounds: Rect | null = null;
+  let fenetres: readonly Rect[] = [];
   let tick = 0;
   let place = false;
   let fullscreen = false;
@@ -162,6 +186,8 @@ export function startLoop(options: LoopOptions): () => void {
   const refreshGeometry = async (): Promise<void> => {
     const [monitors, windows] = await Promise.all([sensors.monitors(), sensors.windows()]);
     surfaces = buildSurfaces(monitors, windows);
+    fenetres = windows;
+    bounds = boundingBox(monitors);
     fullscreen = isFullscreen(monitors, windows);
 
     // Premier placement.
@@ -190,18 +216,14 @@ export function startLoop(options: LoopOptions): () => void {
 
     const pointer = readPointer();
     const idleMs = readIdle();
-    pet = step(pet, { surfaces, pointer, idleMs, nowMs: Date.now() }, FRAME_MS, config);
+    pet = step(pet, { surfaces, bounds, pointer, idleMs, nowMs: Date.now() }, FRAME_MS, config);
 
     const now = tick * FRAME_MS;
-    if (tick % VOICE_EVERY === 0 && options.voice !== undefined) {
-      const humeur = moodFor(mood, { state: pet.state, idleMs, dayKey: today() });
-      mood = { state: pet.state, idleMs, dayKey: today() };
-      if (humeur !== null) options.voice.say(humeur);
+    if (tick % VOICE_EVERY === 0) {
+      const vu: Mood = { state: pet.state, idleMs, dayKey: today(), windows: fenetres };
+      const dit = parle(options, mood, vu, fullscreen);
+      mood = vu;
 
-      const dit = options.voice.pull({
-        focused: options.isFocused?.() ?? false,
-        fullscreen,
-      });
       if (dit !== null) {
         bubble = dit;
         bubbleUntil = now + BUBBLE_MS;

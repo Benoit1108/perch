@@ -15,7 +15,7 @@ const config = defaultMotionConfig;
 const T0 = 1_000_000;
 
 function world(overrides: Partial<WorldView> = {}): WorldView {
-  return { surfaces, pointer: null, idleMs: 0, nowMs: T0, ...overrides };
+  return { surfaces, bounds: null, pointer: null, idleMs: 0, nowMs: T0, ...overrides };
 }
 
 function pet(overrides: Partial<Pet> = {}): Pet {
@@ -217,6 +217,7 @@ describe('perchage sur les fenêtres', () => {
     surfaces: maximisee,
     pointer: null,
     idleMs: 0,
+    bounds: null,
     nowMs,
   });
 
@@ -264,7 +265,12 @@ describe('perchage sur les fenêtres', () => {
 describe('compagnon hors de toute surface', () => {
   it('reste en place quand il n’existe aucune surface', () => {
     const perdu = pet({ x: 42, y: 42, state: 'chute' });
-    const apres = step(perdu, { surfaces: [], pointer: null, idleMs: 0, nowMs: 0 }, 16, config);
+    const apres = step(
+      perdu,
+      { surfaces: [], bounds: null, pointer: null, idleMs: 0, nowMs: 0 },
+      16,
+      config
+    );
 
     expect(apres.x).toBe(42);
     expect(apres.state).toBe('repos');
@@ -273,7 +279,7 @@ describe('compagnon hors de toute surface', () => {
   // Arrive pour de vrai : un écran débranché sous ses pieds le laisse hors du bureau.
   it('est ramené sur la surface la plus proche', () => {
     const dehors = pet({ x: -500, y: 1080, state: 'chute' });
-    const apres = step(dehors, { surfaces, pointer: null, idleMs: 0, nowMs: 0 }, 16, config);
+    const apres = step(dehors, world({ pointer: null }), 16, config);
 
     expect(apres.x).toBe(0);
     expect(apres.y).toBe(1080);
@@ -292,6 +298,7 @@ describe('vie autonome en mode posé', () => {
     surfaces: avecFenetres,
     pointer: null,
     idleMs: 0,
+    bounds: null,
     nowMs,
   });
 
@@ -342,5 +349,90 @@ describe('vie autonome en mode posé', () => {
         expect(avecFenetres.some((s) => Math.abs(s.y - current.y) < 1)).toBe(true);
       }
     }
+  });
+});
+
+describe('bornes du bureau', () => {
+  const bureau = { x: 0, y: 0, width: 1920, height: 1080 };
+
+  /** Fait voler le compagnon vers un curseur, longtemps. */
+  const versLeCurseur = (depart: Pet, pointer: { x: number; y: number }): Pet => {
+    let courant = depart;
+    for (let i = 0; i < 200; i += 1) {
+      courant = step(courant, world({ pointer, bounds: bureau, nowMs: T0 + i * 16 }), 16, config);
+    }
+    return courant;
+  };
+
+  // Il suivait le curseur sans rien pour le retenir et sortait de l'écran, en haut comme
+  // en bas. Le rendu l'ancre par les PIEDS : son corps occupe la hauteur au-dessus.
+  it('reste entier près du bord haut', () => {
+    const arrive = versLeCurseur(pet({ x: 900, y: 500 }), { x: 900, y: 2 });
+
+    expect(arrive.y).toBeGreaterThanOrEqual(config.bodyHeight);
+  });
+
+  it('reste entier près du bord bas', () => {
+    const arrive = versLeCurseur(pet({ x: 900, y: 500 }), { x: 900, y: 1078 });
+
+    expect(arrive.y).toBeLessThanOrEqual(1080);
+  });
+
+  it('reste entier près des bords latéraux', () => {
+    const gauche = versLeCurseur(pet({ x: 900, y: 500 }), { x: 1, y: 500 });
+    const droite = versLeCurseur(pet({ x: 900, y: 500 }), { x: 1918, y: 500 });
+
+    expect(gauche.x).toBeGreaterThanOrEqual(config.bodyWidth / 2);
+    expect(droite.x).toBeLessThanOrEqual(1920 - config.bodyWidth / 2);
+  });
+
+  it('ne borne rien tant qu’aucun écran n’est connu', () => {
+    const arrive = step(pet({ x: 10, y: 10 }), world({ pointer: { x: 0, y: 0 } }), 16, config);
+
+    expect(arrive.state).toBe('suit');
+  });
+});
+
+describe('atterrissage', () => {
+  // Une fenêtre maximisée : son bord haut est un perchoir bien au-dessus du sol.
+  const avecFenetre = buildSurfaces([dp3], [{ x: 0, y: 190, width: 1920, height: 890 }]);
+  const bureau = { x: 0, y: 0, width: 1920, height: 1080 };
+
+  const mondeFenetre = (pointer: { x: number; y: number }, nowMs: number): WorldView => ({
+    surfaces: avecFenetre,
+    bounds: bureau,
+    pointer,
+    idleMs: 0,
+    nowMs,
+  });
+
+  /**
+   * Le défaut : il se laissait choir jusqu'au premier sol SOUS lui — le bas de l'écran —
+   * puis remontait vers le perchoir proche du curseur. Quatre cents pixels de chute suivis
+   * de neuf cents d'escalade, à chaque arrêt de la souris.
+   */
+  it('vise la surface la plus proche plutôt que le sol', () => {
+    let courant = pet({ x: 720, y: 620, mode: 'suit', state: 'suit' });
+    courant = { ...courant, lastPointer: { x: 720, y: 574 } };
+
+    const atteintes = new Set<number>();
+    for (let i = 0; i < 400; i += 1) {
+      courant = step(courant, mondeFenetre({ x: 720, y: 574 }, T0 + 3000 + i * 16), 16, config);
+      if (courant.state === 'marche' || courant.state === 'repos') atteintes.add(courant.y);
+    }
+
+    // Il s'est posé sur le bord de la fenêtre, sans jamais toucher le bas de l'écran.
+    expect(atteintes.has(190)).toBe(true);
+    expect(atteintes.has(1080)).toBe(false);
+  });
+
+  it('tombe quand le perchoir le plus proche est en dessous', () => {
+    let courant = pet({ x: 720, y: 1000, mode: 'suit', state: 'suit' });
+
+    for (let i = 0; i < 60; i += 1) {
+      courant = step(courant, mondeFenetre({ x: 720, y: 954 }, T0 + 3000 + i * 16), 16, config);
+    }
+
+    expect(courant.y).toBeGreaterThan(900);
   });
 });

@@ -3,10 +3,13 @@ import { describe, expect, it } from 'vitest';
 import type { Mood } from './moods.js';
 import { WONDERING_MS, moodFor } from './moods.js';
 
+const fenetre = { x: 0, y: 100, width: 800, height: 600 };
+
 const mood = (overrides: Partial<Mood> = {}): Mood => ({
   state: 'marche',
   idleMs: 0,
   dayKey: '2026-08-14',
+  windows: [fenetre],
   ...overrides,
 });
 
@@ -50,6 +53,27 @@ describe('moodFor', () => {
   it('ne s’inquiète qu’une fois', () => {
     const absent = mood({ idleMs: WONDERING_MS });
     expect(moodFor(absent, mood({ idleMs: WONDERING_MS * 4 }))).toBeNull();
+  });
+
+  // Multi-bureau : passer d'un espace de travail à l'autre remplace toutes les fenêtres
+  // visibles d'un coup. C'est exactement ce qu'un compagnon devrait remarquer.
+  it('remarque un décor entièrement remplacé', () => {
+    const avant = mood({ windows: [fenetre, { ...fenetre, x: 900 }] });
+    const apres = mood({
+      windows: [
+        { ...fenetre, x: 300 },
+        { ...fenetre, x: 1200 },
+      ],
+    });
+
+    expect(moodFor(avant, apres)?.key).toBe('speech.newScene');
+  });
+
+  it('ne remarque pas une simple fenêtre déplacée', () => {
+    const avant = mood({ windows: [fenetre, { ...fenetre, x: 900 }, { ...fenetre, x: 1500 }] });
+    const apres = mood({ windows: [fenetre, { ...fenetre, x: 950 }, { ...fenetre, x: 1500 }] });
+
+    expect(moodFor(avant, apres)).toBeNull();
   });
 
   // Registres : s'endormir est une humeur, s'étonner d'une absence n'est que du bavardage
