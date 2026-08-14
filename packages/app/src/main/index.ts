@@ -123,6 +123,14 @@ function announce(state: PerchState, packs: readonly DiscoveredPack[], sensorNam
 }
 
 async function main(): Promise<void> {
+  // UN seul dossier pour la configuration et pour l'état. Sans cela, Electron déduit le
+  // chemin du nom de paquet npm et range l'état dans `@perch/app`, à côté d'un `perch`
+  // qui contient déjà la configuration — deux dossiers pour une seule application, et un
+  // nom que personne ne comprend en ouvrant `~/.config`.
+  //
+  // À faire AVANT toute lecture de chemin : `getPath('userData')` fige la réponse.
+  app.setName('perch');
+
   if (!claimSingleInstance()) return;
 
   await app.whenReady();
