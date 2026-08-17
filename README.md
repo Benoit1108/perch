@@ -30,6 +30,11 @@ compagnon.
 par le pack de créatures, jamais écrits en dur. La lignée de la démonstration passe de
 Brindibou à Efflèche au niveau 16, puis à Archéduc au niveau 36.
 
+**C'est vous qui le choisissez.** Un champ de recherche dans la fenêtre de choix : tapez
+« Fantominus », « Magicarpe » ou « Zekrom », et sa lignée entière est téléchargée chez vous.
+Ou fabriquez la vôtre — le format de pack est documenté dans [docs/PACKS.md](docs/PACKS.md),
+et une créature inventée y a droit aux mêmes évolutions.
+
 ## L'idée
 
 La plupart des compagnons de bureau sont décoratifs. Celui-ci progresse — niveaux,

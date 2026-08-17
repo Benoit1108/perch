@@ -9,6 +9,17 @@ adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 
 ### Added
 
+- **N'importe quelle créature comme compagnon.** La fenêtre de choix a un champ de
+  recherche : on tape « Fantominus », « Magicarpe » ou « Zekrom », et la lignée entière est
+  téléchargée dans son propre dossier. Le catalogue livré est du texte — 542 familles, 990
+  stades, aucune image (invariant I5) —, et les sprites arrivent au moment du choix.
+
+- **Format de pack documenté** ([docs/PACKS.md](docs/PACKS.md)) : de quoi fabriquer un
+  compagnon qui n'a jamais existé dans un jeu, avec ses propres stades d'évolution. C'est le
+  même format que celui du pack livré et que celui d'une créature téléchargée — il n'y a pas
+  de chemin privilégié. `npm run pack:validate <dossier>` vérifie le manifeste **et**
+  l'existence de chaque image.
+
 - **Une démonstration rejouable** (`npm run demo`) : un scénario joué par le vrai moteur,
   capturé image par image, assemblé en GIF avec une caméra qui suit le compagnon. Rien
   n'est mimé — il suit un curseur, se perche, parle par son cadenceur et évolue par son

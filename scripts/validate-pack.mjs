@@ -7,7 +7,7 @@
 // nom non vide. Deux copies d'une même règle finissent toujours par diverger, et c'est
 // justement le silence au démarrage qu'on cherchait à éviter : un pack invalide est ignoré
 // sans un mot par `discoverPacks`.
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { parseCreaturePack } from '@perch/core';
@@ -21,6 +21,25 @@ try {
 } catch (erreur) {
   console.error(`Manifeste refusé : ${manifeste}`);
   console.error(erreur instanceof Error ? erreur.message : String(erreur));
+  process.exit(1);
+}
+
+// Les images sont vérifiées SUR LE DISQUE, et pas seulement dans le manifeste : un chemin
+// mal recopié passe le schéma sans difficulté, et la créature apparaît alors sans visage —
+// exactement le genre de panne muette que ce script existe pour empêcher.
+const manquantes = [];
+for (const ligne of pack.lines) {
+  for (const stade of ligne.stages) {
+    const fichiers = [stade.sprite, ...Object.values(stade.clips).flatMap((clip) => clip.frames)];
+    for (const fichier of new Set(fichiers)) {
+      if (!existsSync(join(dossier, fichier))) manquantes.push(`${stade.id} → ${fichier}`);
+    }
+  }
+}
+
+if (manquantes.length > 0) {
+  console.error(`Images absentes de ${dossier} :`);
+  for (const manquante of manquantes) console.error(`  ${manquante}`);
   process.exit(1);
 }
 
