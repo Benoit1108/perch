@@ -29,7 +29,11 @@ interface CreatureSink {
 }
 
 export interface CompanionDeps {
-  readonly packs: readonly DiscoveredPack[];
+  /**
+   * Relue à chaque usage, et non figée au démarrage : une créature choisie en cours de
+   * route atterrit sur le disque, et un instantané pris au lancement ne la contient pas.
+   */
+  readonly packs: () => readonly DiscoveredPack[];
   readonly sink: CreatureSink;
   readonly packId: string;
   readonly lineId: string;
@@ -76,7 +80,7 @@ export function createCompanion(deps: CompanionDeps): Companion {
   let lineId = deps.lineId;
 
   const show = async (level: number, evolved = false): Promise<void> => {
-    const resolved = resolveCreature(deps.packs, packId, lineId, level);
+    const resolved = resolveCreature(deps.packs(), packId, lineId, level);
     // Aucun pack exploitable : le rendu garde son marqueur de repli plutôt que d'effacer
     // le compagnon. Le dépôt ne contient aucun sprite (invariant I5), et un utilisateur
     // qui n'a pas encore téléchargé le pack doit voir quelque chose bouger.
@@ -111,7 +115,7 @@ export function createCompanion(deps: CompanionDeps): Companion {
      */
     choices: async (): Promise<readonly Choice[]> => {
       const parPack = await Promise.all(
-        deps.packs.map(async (entry) =>
+        deps.packs().map(async (entry) =>
           Promise.all(
             entry.pack.lines.map(async (line) => {
               const first = stageForLevel(line, 1);
@@ -130,12 +134,12 @@ export function createCompanion(deps: CompanionDeps): Companion {
     },
 
     offers: (wantedPack: string, wantedLine: string): boolean => {
-      const found = deps.packs.find((entry) => entry.pack.id === wantedPack);
+      const found = deps.packs().find((entry) => entry.pack.id === wantedPack);
       return found !== undefined && findLine(found.pack, wantedLine) !== undefined;
     },
 
     evolutionAt: (fromLevel: number, toLevel: number): CreatureStage | null => {
-      const resolved = resolveCreature(deps.packs, packId, lineId, fromLevel);
+      const resolved = resolveCreature(deps.packs(), packId, lineId, fromLevel);
       return resolved === null ? null : evolutionBetween(resolved.line, fromLevel, toLevel);
     },
   };

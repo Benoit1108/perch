@@ -59,8 +59,9 @@ async function companionOn(lineId = 'un'): Promise<{
   sink: ReturnType<typeof recorder>;
 }> {
   const sink = recorder();
+  const pack = await writePack();
   const companion = createCompanion({
-    packs: [await writePack()],
+    packs: () => [pack],
     sink,
     packId: 'essai',
     lineId,
@@ -94,7 +95,7 @@ describe('createCompanion — apparence', () => {
   // garder son marqueur de repli plutôt que de recevoir une créature vide.
   it('n’envoie rien quand aucun pack n’est installé', async () => {
     const sink = recorder();
-    const orphelin = createCompanion({ packs: [], sink, packId: 'essai', lineId: 'un' });
+    const orphelin = createCompanion({ packs: () => [], sink, packId: 'essai', lineId: 'un' });
     await orphelin.show(1);
 
     expect(sink.sent).toHaveLength(0);
@@ -115,8 +116,9 @@ describe('createCompanion — choix', () => {
   // et aucun moyen d'en sortir.
   it('propose les lignées de TOUS les packs installés', async () => {
     const sink = recorder();
+    const deux = [await writePack(), await writePack('autre')];
     const companion = createCompanion({
-      packs: [await writePack(), await writePack('autre')],
+      packs: () => deux,
       sink,
       packId: 'essai',
       lineId: 'un',
@@ -145,8 +147,9 @@ describe('createCompanion — choix', () => {
 
   it('suit le nouveau pack pour les évolutions suivantes', async () => {
     const sink = recorder();
+    const deux = [await writePack(), await writePack('autre')];
     const companion = createCompanion({
-      packs: [await writePack(), await writePack('autre')],
+      packs: () => deux,
       sink,
       packId: 'essai',
       lineId: 'deux',

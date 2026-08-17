@@ -23,6 +23,8 @@
     "commitlint": "commitlint --edit",
     "verify:guardrails": "bash scripts/verify-guardrails.sh",
     "setup:sandbox": "bash scripts/fix-sandbox.sh",
+    "species:build": "node scripts/build-species.mjs",
+    "pack:validate": "node scripts/validate-pack.mjs",
     "pack:fetch": "node scripts/pack-fetch.mjs && npm run typecheck && node scripts/validate-pack.mjs",
     "stop": "node scripts/stop.mjs",
     "watch": "node scripts/watch.mjs",
@@ -35,6 +37,7 @@
     "dist:win": "npm run typecheck && npm run assets --workspace @perch/app && electron-builder --win --config electron-builder.yml --publish never",
     "dist:linux": "npm run typecheck && npm run assets --workspace @perch/app && electron-builder --linux --config electron-builder.yml --publish never",
     "visual": "npm run typecheck && npm run assets --workspace @perch/app && electron scripts/visual-check.cjs --ozone-platform=x11",
+    "visual:choix": "npm run typecheck && npm run assets --workspace @perch/app && electron scripts/chooser-check.cjs --ozone-platform=x11",
     "demo:record": "npm run typecheck && npm run assets --workspace @perch/app && electron scripts/record-demo.cjs --ozone-platform=x11",
     "demo": "npm run demo:record && python3 scripts/build-demo.py",
     "demo:publish": "node scripts/publish-demo.mjs"

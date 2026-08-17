@@ -1,35 +1,10 @@
-import { BrowserWindow, ipcMain } from 'electron';
+import { BrowserWindow } from 'electron';
 import { fileURLToPath } from 'node:url';
-import { z } from 'zod';
 
-import type { Locale } from '@perch/core';
 import { translate } from '@perch/core';
 
-import type { Choice } from '../main/creature.js';
-
-const CHANNEL_OFFER = 'chooser:offer';
-const CHANNEL_PICK = 'chooser:pick';
-
-export interface ChooserDeps {
-  /** Relue à l'ouverture : la langue peut avoir changé depuis le démarrage. */
-  readonly locale: () => Locale;
-  readonly choices: () => Promise<readonly Choice[]>;
-  /** Vérification du couple choisi, sans relire une seule image. */
-  readonly offers: (packId: string, lineId: string) => boolean;
-  readonly onPick: (packId: string, lineId: string) => Promise<void>;
-}
-
-/**
- * Ce que le rendu renvoie : un couple d'identifiants, et rien d'autre.
- *
- * Validé par un schéma comme tout ce qui franchit une frontière — le rendu est du code
- * exécuté par un moteur web, ses messages n'ont pas plus de garanties que le contenu d'un
- * fichier. L'existence du couple est vérifiée ensuite, contre la liste réelle.
- */
-const PickSchema = z.object({
-  packId: z.string().min(1),
-  lineId: z.string().min(1),
-});
+import type { ChooserDeps } from './ipc.js';
+import { registerChooserIpc } from './ipc.js';
 
 let current: BrowserWindow | null = null;
 let deps: ChooserDeps | null = null;
@@ -43,7 +18,10 @@ let deps: ChooserDeps | null = null;
  */
 export function configureChooser(next: ChooserDeps): void {
   deps = next;
-  registerChooserIpc();
+  registerChooserIpc(
+    () => deps,
+    () => current?.close()
+  );
 }
 
 /**
@@ -67,7 +45,7 @@ export function openChooser(): void {
 
   current = new BrowserWindow({
     width: 620,
-    height: 560,
+    height: 700,
     title: translate(deps.locale(), 'chooser.title'),
     webPreferences: {
       preload: fileURLToPath(new URL('../renderer/chooser-preload.cjs', import.meta.url)),
@@ -82,40 +60,4 @@ export function openChooser(): void {
   });
 
   void current.loadFile(fileURLToPath(new URL('../renderer/chooser.html', import.meta.url)));
-}
-
-let wired = false;
-
-/**
- * Branche les canaux une seule fois.
- *
- * `ipcMain.handle` lève sur un canal déjà pris : sans ce garde, rouvrir la fenêtre après
- * l'avoir fermée ferait tomber le processus principal.
- */
-function registerChooserIpc(): void {
-  if (wired) return;
-  wired = true;
-
-  ipcMain.handle(CHANNEL_OFFER, async () => {
-    if (deps === null) return { title: '', intro: '', empty: '', choices: [] };
-
-    return {
-      title: translate(deps.locale(), 'chooser.title'),
-      intro: translate(deps.locale(), 'chooser.intro'),
-      empty: translate(deps.locale(), 'chooser.empty'),
-      choices: await deps.choices(),
-    };
-  });
-
-  ipcMain.handle(CHANNEL_PICK, async (_event, payload: unknown) => {
-    const parsed = PickSchema.safeParse(payload);
-    if (deps === null || !parsed.success) return { ok: false };
-
-    const choice = parsed.data;
-    if (!deps.offers(choice.packId, choice.lineId)) return { ok: false };
-
-    await deps.onPick(choice.packId, choice.lineId);
-    current?.close();
-    return { ok: true };
-  });
 }

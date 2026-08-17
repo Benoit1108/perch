@@ -4,8 +4,35 @@ import { fileURLToPath } from 'node:url';
 
 import type { Defaults } from '../main/bootstrap.js';
 
-import type { DiscoveredPack } from './discover.js';
-import { defaultsFrom, discoverPacksIn } from './discover.js';
+import { defaultsFrom } from './discover.js';
+import type { PackRegistry } from './registry.js';
+import { createPackRegistry } from './registry.js';
+
+/**
+ * Le dossier des packs de l'utilisateur.
+ *
+ * Seul emplacement inscriptible une fois l'application installée : c'est là qu'atterrit
+ * une créature choisie, et là qu'on dépose un pack fabriqué à la main.
+ */
+export function userPacksRoot(): string {
+  return join(app.getPath('userData'), 'packs');
+}
+
+/**
+ * Où chercher des packs, par ordre de priorité.
+ *
+ * Le troisième chemin ne veut plus rien dire une fois empaqueté : il pointait dans le
+ * point de montage de l'AppImage, et le compagnon démarrait sans visage alors que ses
+ * images étaient bien livrées, deux dossiers plus loin.
+ */
+function packRoots(): readonly string[] {
+  return [
+    userPacksRoot(),
+    join(process.resourcesPath, 'packs'),
+    // Le dépôt, en développement seulement.
+    fileURLToPath(new URL('../../../../packs', import.meta.url)),
+  ];
+}
 
 /**
  * Packs installés, avec le pack et la lignée de départ qu'on en déduit (invariant I9).
@@ -16,33 +43,18 @@ import { defaultsFrom, discoverPacksIn } from './discover.js';
  * à un code de sortie parce qu'il manque des images.
  */
 export async function loadPacks(): Promise<{
-  packs: readonly DiscoveredPack[];
+  registry: PackRegistry;
   defaults: Defaults;
 }> {
-  // Trois emplacements, dans cet ordre de priorité :
-  //
-  //   1. le dossier de l'utilisateur, seul inscriptible après installation — c'est là
-  //      qu'atterrissent les packs téléchargés ou déposés à la main (invariant I5) ;
-  //   2. les ressources livrées avec l'application, que la construction y a placées ;
-  //   3. le dépôt, en développement seulement.
-  //
-  // Le troisième chemin ne veut plus rien dire une fois empaqueté : il pointait dans le
-  // point de montage de l'AppImage, et le compagnon démarrait sans visage alors que ses
-  // images étaient bien livrées, deux dossiers plus loin.
-  const roots = [
-    join(app.getPath('userData'), 'packs'),
-    join(process.resourcesPath, 'packs'),
-    fileURLToPath(new URL('../../../../packs', import.meta.url)),
-  ];
-
-  const packs = await discoverPacksIn(roots);
-  const defaults = defaultsFrom(packs);
+  const roots = packRoots();
+  const registry = await createPackRegistry(roots);
+  const defaults = defaultsFrom(registry.all());
 
   if (defaults === null) {
     console.warn(
       `[perch] aucun pack de creatures dans ${roots.join(' ni ')} — lancer « npm run pack:fetch ».`
     );
-    return { packs, defaults: { packId: '', lineId: '' } };
+    return { registry, defaults: { packId: '', lineId: '' } };
   }
-  return { packs, defaults };
+  return { registry, defaults };
 }

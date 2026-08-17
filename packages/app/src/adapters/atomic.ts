@@ -14,14 +14,18 @@ import { randomUUID } from 'node:crypto';
  * Utilisée pour l'état du compagnon comme pour la boîte d'échange : dans les deux cas un
  * lecteur extérieur peut ouvrir le fichier à tout instant, et ne doit jamais tomber sur un
  * JSON à moitié écrit.
+ *
+ * Accepte des OCTETS autant que du texte : les sprites téléchargés passent par ici, et les
+ * faire transiter par une chaîne les corromprait — l'encodage UTF-8 réécrit tout octet
+ * au-delà de 0x7F.
  */
-export async function writeAtomic(filePath: string, contents: string): Promise<void> {
+export async function writeAtomic(filePath: string, contents: string | Uint8Array): Promise<void> {
   await mkdir(dirname(filePath), { recursive: true });
   const temporary = `${filePath}.${randomUUID()}.tmp`;
 
   const handle = await open(temporary, 'w');
   try {
-    await handle.writeFile(contents, 'utf8');
+    await handle.writeFile(contents);
     await handle.sync();
   } finally {
     await handle.close();

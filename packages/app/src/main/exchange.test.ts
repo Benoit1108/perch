@@ -40,7 +40,7 @@ async function echange(packs: readonly DiscoveredPack[] = [pack('local', { choue
   return {
     directory,
     exchange: createExchange({
-      packs,
+      packs: () => packs,
       directory,
       appVersion: '0.0.0',
       newId: () => 'depot-1',

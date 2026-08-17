@@ -24,6 +24,14 @@ const fr = {
   'chooser.title': 'Choisis ton compagnon',
   'chooser.intro': "Il vivra sur ton bureau et grandira avec toi. Ce choix n'est pas définitif.",
   'chooser.empty': 'Aucune créature installée pour le moment.',
+  'chooser.installed': 'Déjà chez toi',
+  'chooser.searchHint':
+    'Cherche par son nom. Sa lignée entière est téléchargée : il commencera petit et grandira.',
+  'chooser.searchPlaceholder': 'Fantominus, Magicarpe, Zekrom…',
+  'chooser.searchNone': 'Aucune créature de ce nom.',
+  'chooser.searchBusy': 'Téléchargement…',
+  'chooser.searchFailed': 'Téléchargement impossible. Vérifie ta connexion, puis réessaie.',
+  'chooser.myPack': 'Mes créatures',
 
   'settings.privacy': 'Tout reste sur cette machine. Aucun compte, aucun serveur.',
   'settings.language': 'Langue',
@@ -88,6 +96,14 @@ const en: Record<keyof typeof fr, string> = {
   'chooser.title': 'Choose your companion',
   'chooser.intro': 'It will live on your desktop and grow with you. You can change this later.',
   'chooser.empty': 'No creature installed yet.',
+  'chooser.installed': 'Already yours',
+  'chooser.searchHint':
+    'Search by name. The whole family is downloaded: it starts small and grows up.',
+  'chooser.searchPlaceholder': 'Gastly, Magikarp, Zekrom…',
+  'chooser.searchNone': 'No creature by that name.',
+  'chooser.searchBusy': 'Downloading…',
+  'chooser.searchFailed': 'Download failed. Check your connection, then try again.',
+  'chooser.myPack': 'My creatures',
 
   'settings.privacy': 'Everything stays on this machine. No account, no server.',
   'settings.language': 'Language',

@@ -18,7 +18,8 @@ export type Adoption =
   | { readonly kind: 'inconnue'; readonly species: string };
 
 export interface ExchangeDeps {
-  readonly packs: readonly DiscoveredPack[];
+  /** Relue à chaque usage : une créature installée après le démarrage compte aussi. */
+  readonly packs: () => readonly DiscoveredPack[];
   readonly directory: string;
   readonly appVersion: string;
   /** Identifiant du dépôt et horodatage : injectés pour rester reproductibles en test. */
@@ -54,7 +55,7 @@ export function createExchange(deps: ExchangeDeps): Exchange {
 
     send: async (creature: Creature, note?: string): Promise<Envelope | null> => {
       const resolved = resolveCreature(
-        deps.packs,
+        deps.packs(),
         creature.packId,
         creature.lineId,
         creature.level
@@ -89,7 +90,7 @@ export function createExchange(deps: ExchangeDeps): Exchange {
       // Quelqu'un l'a prise avant nous — l'autre application, ou une autre fenêtre.
       if (envelope === null) return { kind: 'partie' };
 
-      for (const entry of deps.packs) {
+      for (const entry of deps.packs()) {
         const trouve = findSpecies(entry.pack, envelope.creature.species);
         if (trouve !== undefined) {
           return {

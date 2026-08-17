@@ -15,8 +15,13 @@ directories:
   buildResources: build
 
 # Uniquement le compilé et les ressources des pages : ni sources TypeScript, ni tests.
+#
+# `assets/` porte le catalogue des espèces — du TEXTE, pas des images (invariant I5). Sans
+# lui, la recherche de créature ne propose rien une fois l'application empaquetée, alors
+# qu'elle fonctionne en développement : le fichier est lu par un chemin relatif au compilé.
 files:
   - dist/**/*
+  - assets/**/*
   - package.json
 
 # Les créatures voyagent HORS de l'archive, dans `resources/packs`.

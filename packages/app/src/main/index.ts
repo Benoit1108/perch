@@ -79,7 +79,7 @@ function reportRecovery(recovery: {
  * Elle ne vit dans le dossier d'aucune des deux applications : rangée chez l'une, elle
  * disparaîtrait avec elle.
  */
-function openExchange(env: Environment, packs: readonly DiscoveredPack[]): Exchange {
+function openExchange(env: Environment, packs: () => readonly DiscoveredPack[]): Exchange {
   return createExchange({
     packs,
     directory: boxDirectory({
@@ -190,7 +190,7 @@ async function main(): Promise<void> {
 
   const { progression, companion } = startCreature({
     state,
-    packs: installed.packs,
+    packs: installed.registry,
     overlay,
     storage,
     activity,
@@ -199,7 +199,7 @@ async function main(): Promise<void> {
     fresh: recovery.kind === 'fresh',
   });
 
-  wireSettings(openExchange(env, installed.packs), progression, companion, reloadConfig);
+  wireSettings(openExchange(env, installed.registry.all), progression, companion, reloadConfig);
 
   const stop = startLoop({
     overlay,
@@ -222,7 +222,7 @@ async function main(): Promise<void> {
     void storage.write(progression.current());
   });
 
-  announce(state, installed.packs, sensors.name);
+  announce(state, installed.registry.all(), sensors.name);
 }
 
 void main();
