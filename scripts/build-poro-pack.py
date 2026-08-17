@@ -34,6 +34,8 @@ STADES = [
     {"id": "poro-4", "nom": "Roi Poro", "niveau": 60},
 ]
 
+MARQUE = "build-poro-pack.py"
+
 LICENCE = (
     "Oeuvre originale de ce depot, inspiree de l'univers de League of Legends "
     "(Riot Games). Fan-art, usage non commercial."
@@ -88,11 +90,35 @@ def ecrire_stade(dossier: Path, stade: dict) -> dict:
     }
 
 
-def fabriquer(sortie: Path) -> int:
+def appartient_au_script(sortie: Path) -> bool:
+    """Le pack en place a-t-il ete fabrique ici ?
+
+    Un pack DESSINE A LA MAIN vit dans ce meme dossier, sous les memes noms de fichiers.
+    Sans ce garde, une relance de la commande ecraserait le travail d'un illustrateur par
+    des images generees — et il n'y en a aucune copie dans le depot (invariant I5).
+    """
+    manifeste = sortie / "manifest.json"
+    if not manifeste.exists():
+        return True
+    try:
+        return json.loads(manifeste.read_text(encoding="utf8")).get("generator") == MARQUE
+    except (OSError, ValueError):
+        return True
+
+
+def fabriquer(sortie: Path, force: bool = False) -> int:
+    if not force and not appartient_au_script(sortie):
+        print(f"{sortie} contient un pack qui n'a pas ete genere ici — rien n'a ete touche.")
+        print("Relancer avec --force pour l'ecraser malgre tout.")
+        return 1
+
     stades = [ecrire_stade(sortie, stade) for stade in STADES]
 
     manifeste = {
         "schemaVersion": 1,
+        # Marque de fabrique, hors schema : elle distingue un pack genere d'un pack
+        # dessine a la main, et c'est ce qui empeche d'ecraser le second.
+        "generator": MARQUE,
         "id": "poro",
         "name": "Poros",
         "license": LICENCE,
@@ -116,7 +142,11 @@ def main() -> int:
         default=dossier_utilisateur() / "poro",
         help="dossier du pack (defaut : le dossier de packs de l'utilisateur)",
     )
-    return fabriquer(parseur.parse_args().out)
+    parseur.add_argument(
+        "--force", action="store_true", help="ecraser un pack qui n'a pas ete genere ici"
+    )
+    arguments = parseur.parse_args()
+    return fabriquer(arguments.out, arguments.force)
 
 
 if __name__ == "__main__":

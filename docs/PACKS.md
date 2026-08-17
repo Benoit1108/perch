@@ -165,7 +165,13 @@ manifeste — sans télécharger la moindre image : elles sont **dessinées**.
 ```bash
 npm run pack:poro          # → dans le dossier de packs de l'utilisateur
 npm run pack:poro -- --out /chemin/de/mon/choix
+npm run pack:poro -- --force   # écrase un pack dessiné à la main
 ```
+
+La commande **refuse d'écraser un pack qu'elle n'a pas produit**. Un pack dessiné à la main
+vit dans le même dossier, sous les mêmes noms de fichiers : sans ce garde, une relance
+remplacerait le travail d'un illustrateur par des images générées, et le dépôt n'en garde
+aucune copie (invariant I5).
 
 La lignée va du poro ordinaire au Roi Poro, en passant par la moustache de Braum et la
 grosse monture — quatre paliers, aux niveaux 1, 16, 36 et 60. C'est une **œuvre originale**

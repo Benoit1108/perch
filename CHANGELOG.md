@@ -28,6 +28,12 @@ adhère au [versionnage sémantique](https://semver.org/lang/fr/).
   passer tous les clics, il n'y a rien sur quoi cliquer pour ouvrir une fenêtre — relancer
   l'application est le seul geste disponible une fois le compagnon en place.
 
+- **Le pack de poros est désormais dessiné à la main** par un illustrateur, à partir du
+  brief de format. `npm run pack:poro` reste comme exemple de pack généré, et **refuse
+  d'écraser** un pack qu'il n'a pas produit : sans ce garde, une relance de la commande
+  remplaçait le travail d'un illustrateur par des images générées, sans copie de secours
+  dans le dépôt (invariant I5).
+
 - **Un pack de poros**, dessiné par `npm run pack:poro` : quatre stades animés — poro,
   moustache de Braum, grosse monture, Roi Poro — aux niveaux 1, 16, 36 et 60. Œuvre
   originale plutôt qu'images reprises, et fabriquée à la demande dans le dossier de
