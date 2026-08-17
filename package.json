@@ -36,7 +36,8 @@
     "dist:linux": "npm run typecheck && npm run assets --workspace @perch/app && electron-builder --linux --config electron-builder.yml --publish never",
     "visual": "npm run typecheck && npm run assets --workspace @perch/app && electron scripts/visual-check.cjs --ozone-platform=x11",
     "demo:record": "npm run typecheck && npm run assets --workspace @perch/app && electron scripts/record-demo.cjs --ozone-platform=x11",
-    "demo": "npm run demo:record && python3 scripts/build-demo.py"
+    "demo": "npm run demo:record && python3 scripts/build-demo.py",
+    "demo:publish": "node scripts/publish-demo.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.2",

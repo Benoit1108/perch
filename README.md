@@ -4,8 +4,31 @@ Un compagnon pixelisé qui vit sur votre bureau. Il se perche au bord des fenêt
 souris, lâche une réflexion de temps en temps, et grandit avec la façon dont vous utilisez
 votre machine.
 
-> **Statut : en construction.** Le sprint fondations (S1) est posé ; le compagnon ne bouge
-> pas encore. Voir [ROADMAP.md](ROADMAP.md).
+![Perch en action](https://github.com/Benoit1108/perch/releases/download/demo/demo.gif)
+
+> Le GIF n'est pas versionné ici : il contient des sprites, et ce dépôt n'en héberge aucun
+> (invariant I5). Il vit dans une ressource de release, régénérable par `npm run demo` —
+> rien n'y est mimé, c'est le vrai moteur qui joue le scénario.
+
+> **Statut : en construction.** Linux et Windows fonctionnent, l'installeur aussi. Reste la
+> publication. Voir [ROADMAP.md](ROADMAP.md).
+
+## Ce qu'il fait
+
+**Il vous suit.** Quand la souris bouge, il vole vers elle. Quand elle s'arrête deux
+secondes et demie, il rejoint la surface la plus proche et s'y pose.
+
+**Il vit sa vie.** Posé, il arpente le bord d'une fenêtre, change de perchoir de sa propre
+initiative, souffle quand il a beaucoup bougé, et finit par s'endormir si vous partez.
+
+**Il remarque ce que vous faites.** Une fenêtre réduite, un alt-tab, un changement de
+bureau, une longue absence : chacun lui inspire une phrase. Il se tait pendant les périodes
+de concentration et en plein écran — une bulle de trop suffit à faire désinstaller un
+compagnon.
+
+**Il grandit.** L'expérience vient du temps actif ; les paliers d'évolution sont déclarés
+par le pack de créatures, jamais écrits en dur. La lignée de la démonstration passe de
+Brindibou à Efflèche au niveau 16, puis à Archéduc au niveau 36.
 
 ## L'idée
 
