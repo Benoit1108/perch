@@ -37,12 +37,11 @@ from poro_corps import (
     POIL,
     RUBIS,
     T,
-    bosses,
-    bouche,
     cerner,
     corps,
+    crete,
     finir,
-    meche,
+    museau,
     oreilles,
     pattes,
     toile,
@@ -50,31 +49,37 @@ from poro_corps import (
 )
 
 
-def _base(im, cx, bas, dil, dodo, pas, larg, haut, clair, ombre, fond):
+def _base(im, cx, bas, dil, dodo, pas, larg, haut, clair, ombre, fond, museau_ombre=None):
     """Le poro nu. Les stades ajoutent par-dessus.
 
-    L'ordre compte : le corps EN PREMIER, puis pattes et oreilles. Dessinees avant, elles
-    disparaissaient sous le ventre.
+    L'ordre compte : pattes et oreilles AVANT le corps pour qu'elles passent derriere,
+    museau et yeux APRES pour qu'ils s'y posent.
     """
     boite = [cx - (larg * E + dil) // 2, bas - (haut * E - dil), cx + (larg * E + dil) // 2, bas]
+    d = ImageDraw.Draw(im)
+
+    pattes(d, cx, bas, larg * 22 // 100, pas)
+    crete(d, cx, boite[1], clair)
     corps(im, boite, clair, ombre, fond)
 
+    # Les oreilles APRES le corps : dessinees avant, elles disparaissaient dessous. Sur le
+    # modele elles se posent bien devant, au niveau des tempes.
     d = ImageDraw.Draw(im)
-    pattes(d, cx, bas, larg // 4, pas)
-    oreilles(d, cx, boite[1] + 5 * E, larg * 33 // 100)
-    meche(d, cx, boite[1], clair)
-    yeux(d, cx, boite[1] + 12 * E, larg * 23 // 100, larg / 40, dodo)
+    hauteur = boite[3] - boite[1]
+    oreilles(d, cx, boite[1] + hauteur * 17 // 100, larg * 28 // 100, 7)
+    yeux(d, cx, boite[1] + hauteur * 38 // 100, larg * 19 // 100, larg / 36, dodo)
+    museau(d, cx, boite[1] + hauteur * 55 // 100, (boite[2] - boite[0]) * 68 // 100,
+           clair, museau_ombre or fond)
     return d, boite
 
 
 def _stade_1(im, cx, bas, dil, dodo, pas):
-    d, boite = _base(im, cx, bas, dil, dodo, pas, 40, 29, BLANC, OMBRE, BLEU)
-    bouche(d, cx, boite[1] + 17 * E)
+    _base(im, cx, bas, dil, dodo, pas, 36, 32, BLANC, OMBRE, BLEU)
 
 
 def _stade_2(im, cx, bas, dil, dodo, pas):
     """La moustache de Braum : large, basse, les bouts retrousses vers le haut."""
-    d, boite = _base(im, cx, bas, dil, dodo, pas, 40, 29, BLANC, OMBRE, BLEU)
+    d, boite = _base(im, cx, bas, dil, dodo, pas, 36, 32, BLANC, OMBRE, BLEU)
     haut = boite[1]
 
     for sens in (-1, 1):
@@ -101,7 +106,7 @@ def _stade_3(im, cx, bas, dil, dodo, pas):
         my = milieu + math.sin(math.radians(angle)) * 15 * E
         d.ellipse([mx - 4 * E, my - 4 * E, mx + 4 * E, my + 4 * E], fill=GIVRE_O)
 
-    d, boite = _base(im, cx, bas, dil, dodo, pas, 43, 32, GIVRE, GIVRE_O, GIVRE_O)
+    d, boite = _base(im, cx, bas, dil, dodo, pas, 40, 35, GIVRE, GIVRE_O, GIVRE_O)
     # La langue qui pend, comme sur la monture du jeu.
     d.ellipse([cx - 3 * E, boite[1] + 18 * E, cx + 3 * E, boite[1] + 25 * E], fill=LANGUE)
 
@@ -116,19 +121,13 @@ def _stade_4(im, cx, bas, dil, dodo, pas):
             fill=CAPE,
         )
 
-    d, boite = _base(im, cx, bas, dil, dodo, pas, 42, 33, BLANC, OMBRE, BLEU)
+    d, boite = _base(im, cx, bas, dil, dodo, pas, 40, 35, BLANC, OMBRE, BLEU)
 
     # La barbe : une masse claire sur le bas du visage, en plus GRIS que le corps. Dans le
     # meme blanc, elle s'y fondait et on ne voyait plus rien.
-    barbe = [cx - 11 * E, boite[1] + 17 * E, cx + 11 * E, boite[3] - 2 * E]
-    d.ellipse(barbe, fill=BARBE)
-    bosses(d, barbe, BARBE, 6)
-    # Deux moustaches qui remontent sur les joues, sinon la barbe fait une galette.
-    for sens in (-1, 1):
-        d.ellipse(
-            [cx + sens * 11 * E - 4 * E, boite[1] + 14 * E, cx + sens * 11 * E + 4 * E, boite[1] + 22 * E],
-            fill=BARBE,
-        )
+    hauteur = boite[3] - boite[1]
+    museau(d, cx, boite[1] + hauteur * 58 // 100, (boite[2] - boite[0]) * 80 // 100, BARBE, BLEU)
+    museau(d, cx, boite[1] + hauteur * 76 // 100, (boite[2] - boite[0]) * 56 // 100, BARBE, BLEU)
 
     base = boite[1] + 3 * E
     d.rectangle([cx - 13 * E, base - 3 * E, cx + 13 * E, base + 2 * E], fill=OR)
