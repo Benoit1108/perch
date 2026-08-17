@@ -24,6 +24,7 @@
     "verify:guardrails": "bash scripts/verify-guardrails.sh",
     "setup:sandbox": "bash scripts/fix-sandbox.sh",
     "species:build": "node scripts/build-species.mjs",
+    "pack:poro": "python3 scripts/build-poro-pack.py",
     "pack:validate": "node scripts/validate-pack.mjs",
     "pack:fetch": "node scripts/pack-fetch.mjs && npm run typecheck && node scripts/validate-pack.mjs",
     "stop": "node scripts/stop.mjs",

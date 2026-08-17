@@ -33,7 +33,8 @@ Brindibou à Efflèche au niveau 16, puis à Archéduc au niveau 36.
 **C'est vous qui le choisissez.** Un champ de recherche dans la fenêtre de choix : tapez
 « Fantominus », « Magicarpe » ou « Zekrom », et sa lignée entière est téléchargée chez vous.
 Ou fabriquez la vôtre — le format de pack est documenté dans [docs/PACKS.md](docs/PACKS.md),
-et une créature inventée y a droit aux mêmes évolutions.
+et une créature inventée y a droit aux mêmes évolutions. `npm run pack:poro` en dessine une
+de bout en bout, en guise d'exemple : quatre stades animés, du poro au Roi Poro.
 
 ## L'idée
 

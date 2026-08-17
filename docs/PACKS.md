@@ -157,6 +157,28 @@ Le validateur utilise le **schéma que l'application utilisera vraiment**, et v�
 que chaque image référencée existe sur le disque. Une erreur ici est une créature qui
 n'apparaîtrait pas, sans un mot, au prochain lancement.
 
+## Un exemple complet : les poros
+
+`scripts/build-poro-pack.py` fabrique un pack entier — quatre stades, animés, avec son
+manifeste — sans télécharger la moindre image : elles sont **dessinées**.
+
+```bash
+npm run pack:poro          # → dans le dossier de packs de l'utilisateur
+npm run pack:poro -- --out /chemin/de/mon/choix
+```
+
+La lignée va du poro ordinaire au Roi Poro, en passant par la moustache de Braum et la
+grosse monture — quatre paliers, aux niveaux 1, 16, 36 et 60. C'est une **œuvre originale**
+et non une image reprise : les références disponibles étaient des captures de jeu et des
+rendus 3D, de cinquante à cinq cents pixels, sur des fonds chargés. Détourées, elles
+auraient donné une lignée dont le deuxième stade est plus petit et plus flou que le
+premier — l'inverse de ce qu'une évolution doit montrer.
+
+À lire comme un modèle : `poro_dessin.py` tient le dessin, `build-poro-pack.py` décline les
+poses en animations (`repos`, `marche`, `sommeil`) et écrit le manifeste. La même structure
+convient à un pack dessiné à la main, où les poses viennent d'un fichier plutôt que d'un
+tracé.
+
 ## Ce que le dépôt ne contient pas
 
 Aucun sprite n'est versionné, jamais — c'est l'invariant I5. Le dépôt ne contient que la

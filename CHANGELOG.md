@@ -14,6 +14,11 @@ adhère au [versionnage sémantique](https://semver.org/lang/fr/).
   téléchargée dans son propre dossier. Le catalogue livré est du texte — 542 familles, 990
   stades, aucune image (invariant I5) —, et les sprites arrivent au moment du choix.
 
+- **Un pack de poros**, dessiné par `npm run pack:poro` : quatre stades animés — poro,
+  moustache de Braum, grosse monture, Roi Poro — aux niveaux 1, 16, 36 et 60. Œuvre
+  originale plutôt qu'images reprises, et fabriquée à la demande dans le dossier de
+  l'utilisateur : le dépôt n'en garde que la recette (invariant I5).
+
 - **Format de pack documenté** ([docs/PACKS.md](docs/PACKS.md)) : de quoi fabriquer un
   compagnon qui n'a jamais existé dans un jeu, avec ses propres stades d'évolution. C'est le
   même format que celui du pack livré et que celui d'une créature téléchargée — il n'y a pas
