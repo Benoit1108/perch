@@ -42,7 +42,7 @@ from poro_corps import (
     crete,
     finir,
     museau,
-    oreilles,
+    cornes,
     pattes,
     toile,
     yeux,
@@ -62,11 +62,10 @@ def _base(im, cx, bas, dil, dodo, pas, larg, haut, clair, ombre, fond, museau_om
     crete(d, cx, boite[1], clair)
     corps(im, boite, clair, ombre, fond)
 
-    # Les oreilles APRES le corps : dessinees avant, elles disparaissaient dessous. Sur le
-    # modele elles se posent bien devant, au niveau des tempes.
+    # Les cornes APRES le corps : dessinees avant, elles disparaissaient dessous.
     d = ImageDraw.Draw(im)
     hauteur = boite[3] - boite[1]
-    oreilles(d, cx, boite[1] + hauteur * 17 // 100, larg * 28 // 100, 7)
+    cornes(d, cx, boite[1] + hauteur * 8 // 100, larg * 22 // 100, 6)
     yeux(d, cx, boite[1] + hauteur * 38 // 100, larg * 19 // 100, larg / 36, dodo)
     museau(d, cx, boite[1] + hauteur * 55 // 100, (boite[2] - boite[0]) * 68 // 100,
            clair, museau_ombre or fond)

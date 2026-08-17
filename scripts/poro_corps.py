@@ -38,9 +38,10 @@ BLEU = (176, 203, 227)
 GIVRE = (204, 230, 246)
 GIVRE_O = (154, 192, 222)
 BARBE = (216, 229, 243)
-OREILLE = (170, 142, 106)
-OREILLE_S = (124, 98, 72)
-PATTE = (176, 152, 124)
+CORNE = (176, 146, 108)
+CORNE_S = (122, 96, 70)
+CORNE_C = (206, 180, 142)
+PATTE = (178, 154, 126)
 TRAIT = (52, 56, 78)
 OEIL = (28, 32, 66)
 OEIL_C = (92, 112, 168)
@@ -70,32 +71,48 @@ def cerner(im: Image.Image, epaisseur: int = E) -> Image.Image:
 
 
 def pattes(d, cx: int, bas: int, ecart: int, pas: float = 0.0) -> None:
-    """Quatre pattes : les deux de derriere affleurent a peine, comme sur le modele.
+    """DEUX pattes, et pas quatre.
 
-    `pas` decale les pattes avant en opposition, ce qui fait toute l'animation de marche.
+    Le premier jet ajoutait deux pattes arriere plus sombres. A quatre-vingt-seize pixels
+    elles ne se lisaient pas comme des pattes : ca faisait deux paquets fonces sous le
+    ventre, et le bas de la bete devenait illisible.
+
+    `pas` les decale en opposition, ce qui fait toute l'animation de marche.
     """
-    for sens in (-1, 1):
-        x = cx + sens * (ecart + 4) * E
-        d.rounded_rectangle([x - 3 * E, bas - 4 * E, x + 3 * E, bas + E], radius=2 * E, fill=OREILLE_S)
     for i, sens in enumerate((-1, 1)):
         saut = round(2 * E * math.sin(pas * 2 * math.pi + i * math.pi))
         x = cx + sens * ecart * E
-        d.rounded_rectangle([x - 4 * E, bas - 2 * E - saut, x + 4 * E, bas + 4 * E - saut], radius=2 * E, fill=PATTE)
+        d.rounded_rectangle([x - 4 * E, bas - 3 * E - saut, x + 4 * E, bas + 3 * E - saut], radius=3 * E, fill=PATTE)
 
 
-def oreilles(d, cx: int, y: float, ecart: int, longueur: int = 9) -> None:
-    """TOMBANTES et vers l'exterieur. Dressees, elles faisaient des antennes de faon."""
+def cornes(d, cx: int, y: float, ecart: int, longueur: int = 6) -> None:
+    """Des CORNES, pas des oreilles — le code se trompait de mot, et le dessin avec.
+
+    PETITES et HAUTES : elles poussent sur le sommet du crane, de part et d'autre de la
+    crete, et pointent vers le haut et l'exterieur. Longues et rabattues, elles arrivaient
+    au niveau des yeux et se lisaient comme des sourcils fronces — la bete avait l'air en
+    colere.
+    """
     for sens in (-1, 1):
-        x = cx + sens * ecart * E
-        bout_x = x + sens * longueur * E
-        bout_y = y + longueur * 0.7 * E
+        base = cx + sens * ecart * E
+        bout_x = base + sens * longueur * E
+        bout_y = y - longueur * 0.8 * E
+
         d.polygon(
-            [(x, y - 4 * E), (bout_x, bout_y - 3 * E), (bout_x - sens * 2 * E, bout_y + 2 * E), (x, y + 3 * E)],
-            fill=OREILLE,
+            [
+                (base, y + 3 * E),
+                (base + sens * 5 * E, y + 5 * E),
+                (bout_x + sens * 3 * E, bout_y + 4 * E),
+                (bout_x, bout_y - 3 * E),
+            ],
+            fill=CORNE,
         )
+        # La face inferieure, plus sombre : c'est elle qui donne le relief.
         d.polygon(
-            [(x + sens * E, y + E), (bout_x - sens * 2 * E, bout_y + 2 * E), (x, y + 3 * E)], fill=OREILLE_S
+            [(base + sens * E, y + 5 * E), (base + sens * 5 * E, y + 5 * E), (bout_x + sens * 3 * E, bout_y + 4 * E)],
+            fill=CORNE_S,
         )
+        d.ellipse([bout_x - 2.5 * E, bout_y - 3 * E, bout_x + 2.5 * E, bout_y + 2 * E], fill=CORNE_C)
 
 
 def corps(im: Image.Image, boite: list[int], clair, ombre, bas) -> None:
@@ -130,17 +147,19 @@ def museau(d, cx: int, y: float, largeur: int, clair, ombre) -> None:
     un masque chirurgical, les seconds une meringue. Les touffes du centre pendent plus
     bas, celles du bord s'evasent en debordant la silhouette — c'est ce qui rend le
     contour ebouriffe plutot que lisse.
+
+    Une tentative d'ombre PORTEE floutee a suivi, pour adoucir les pointes : elle debordait
+    la silhouette du corps, que le cerne suivait ensuite, et la bete devenait une tache.
+    Le fil d'ombre simple, lui, tient.
     """
-    nombre = 9
+    nombre = 7
     for i in range(nombre):
         t = i / (nombre - 1)
         x = cx + round((t - 0.5) * largeur)
         longueur = (3 + 3.5 * math.sin(t * math.pi)) * E
         ecart = round((t - 0.5) * 12 * E)
-        d.polygon([(x - 3.5 * E, y - 4 * E), (x + 3.5 * E, y - 4 * E), (x + ecart, y + longueur)], fill=clair)
+        d.polygon([(x - 4.5 * E, y - 4 * E), (x + 4.5 * E, y - 4 * E), (x + ecart, y + longueur)], fill=clair)
 
-    # Un fil d'ombre SOUS la grappe seulement : sur toute la largeur, il se lit comme une
-    # bouche.
     d.arc([cx - largeur // 2, y - 2 * E, cx + largeur // 2, y + 9 * E], start=25, end=155, fill=ombre, width=E)
 
 
@@ -156,7 +175,12 @@ def yeux(d, cx: int, y: float, ecart: int = 8, taille: float = 1.0, dodo: bool =
             d.arc([ox - rx, y - ry, ox + rx, y + ry], start=200, end=340, fill=OEIL, width=E)
             continue
         d.ellipse([ox - rx, y - ry, ox + rx, y + ry], fill=OEIL)
-        d.ellipse([ox - rx * 0.5, y + ry * 0.15, ox + rx * 0.5, y + ry * 0.8], fill=OEIL_C)
+        # Le bas de l'iris s'eclaircit, comme sur le modele...
+        d.ellipse([ox - rx * 0.55, y + ry * 0.1, ox + rx * 0.55, y + ry * 0.8], fill=OEIL_C)
+        # ...et un vrai point blanc en haut a gauche allume le regard. Sans lui, l'oeil
+        # reste une tache sombre.
+        d.ellipse([ox - rx * 0.75, y - ry * 0.7, ox - rx * 0.05, y - ry * 0.05], fill=(255, 255, 255))
+        d.ellipse([ox + rx * 0.2, y + ry * 0.3, ox + rx * 0.6, y + ry * 0.7], fill=(255, 255, 255))
 
 
 def crete(d, cx: int, haut: float, clair) -> None:
