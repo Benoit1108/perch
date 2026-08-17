@@ -9,6 +9,11 @@ adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 
 ### Added
 
+- **Une démonstration rejouable** (`npm run demo`) : un scénario joué par le vrai moteur,
+  capturé image par image, assemblé en GIF avec une caméra qui suit le compagnon. Rien
+  n'est mimé — il suit un curseur, se perche, parle par son cadenceur et évolue par son
+  système d'évolution.
+
 - **Boîte d'échange** avec les autres applications compagnon : un dossier neutre, une
   enveloppe JSON versionnée, et un retrait atomique qui interdit qu'une créature soit prise
   deux fois. Voir [docs/EXCHANGE.md](docs/EXCHANGE.md).

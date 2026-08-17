@@ -20,7 +20,7 @@
       // `electron-builder.yml` désigne ce hook par son chemin, dans un YAML : aucun outil
       // ne suit cette référence-là. Sans cette ligne, le fichier passe pour mort et la
       // dépendance qu'il utilise pour inutile.
-      "entry": ["scripts/fuses.cjs", "scripts/visual-check.cjs"],
+      "entry": ["scripts/fuses.cjs", "scripts/visual-check.cjs", "scripts/record-demo.cjs"],
 
       // Son export est appelé par electron-builder, jamais par notre code. Le compter
       // comme inutilisé serait un faux positif — même raison que pour l'extension GNOME.

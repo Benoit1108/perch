@@ -51,6 +51,8 @@ démarre quand même : le compagnon s'affiche alors sous la forme d'un marqueur 
 | `npm run stop`              | L'arrête (fichier PID — ne dépend pas du clavier)  |
 | `npm run setup:sandbox`     | Corrige les permissions d'Electron, une seule fois |
 | `npm run pack:fetch`        | Fabrique le pack de créatures par défaut           |
+| `npm run visual`            | Capture le compagnon aux bords et aux coins        |
+| `npm run demo`              | Rejoue la démonstration et en fait un GIF          |
 | `npm run audit`             | Vulnérabilités, exceptions nommées et justifiées   |
 | `npm run dist:linux`        | Construit l'AppImage                               |
 | `npm run dist:win`          | Construit l'installeur Windows                     |
