@@ -20,23 +20,38 @@ const interaction: SpeechRequest = { key: 'speech.questDone', register: 'interac
 
 describe('canSpeak — les règles de silence', () => {
   it('autorise la première bulle', () => {
-    expect(canSpeak(emptySpeech, contexte(), config)).toBe(true);
+    expect(canSpeak(emptySpeech, contexte(), config, 'bavardage')).toBe(true);
   });
 
   it('se tait pendant la concentration', () => {
-    expect(canSpeak(emptySpeech, contexte({ focused: true }), config)).toBe(false);
+    expect(canSpeak(emptySpeech, contexte({ focused: true }), config, 'evenement')).toBe(false);
   });
 
   it('se tait en plein écran', () => {
-    expect(canSpeak(emptySpeech, contexte({ fullscreen: true }), config)).toBe(false);
+    expect(canSpeak(emptySpeech, contexte({ fullscreen: true }), config, 'evenement')).toBe(false);
   });
 
-  it('respecte l’intervalle minimal', () => {
+  it('respecte l’intervalle du registre', () => {
     const vientDeParler = { ...emptySpeech, lastSpokeAt: T0 };
-    expect(canSpeak(vientDeParler, contexte({ nowMs: T0 + 60_000 }), config)).toBe(false);
-    expect(canSpeak(vientDeParler, contexte({ nowMs: T0 + config.minIntervalMs }), config)).toBe(
-      true
-    );
+    const apres = (ms: number) => contexte({ nowMs: T0 + ms });
+
+    expect(canSpeak(vientDeParler, apres(1000), config, 'bavardage')).toBe(false);
+    expect(
+      canSpeak(vientDeParler, apres(config.minIntervalMs.bavardage), config, 'bavardage')
+    ).toBe(true);
+  });
+
+  /**
+   * Le défaut qui rendait le compagnon muet : un seuil unique, réglé pour que le bavardage
+   * reste discret, retenait aussi les réactions. Une phrase au démarrage, puis plus rien —
+   * tout le reste périmait en file avant d'avoir le droit d'être dit.
+   */
+  it('laisse un événement passer bien avant un bavardage', () => {
+    const vientDeParler = { ...emptySpeech, lastSpokeAt: T0 };
+    const juste = contexte({ nowMs: T0 + config.minIntervalMs.evenement });
+
+    expect(canSpeak(vientDeParler, juste, config, 'evenement')).toBe(true);
+    expect(canSpeak(vientDeParler, juste, config, 'bavardage')).toBe(false);
   });
 });
 
@@ -130,17 +145,23 @@ describe('pull', () => {
     expect(pull(state, contexte(), config).speak?.params).toEqual({ level: 12 });
   });
 
-  it('ne dépasse jamais une bulle par intervalle', () => {
+  // La garantie qui compte n'est pas « une seule bulle », c'est l'ESPACEMENT : deux
+  // bulles ne se suivent jamais de plus près que l'intervalle de leur registre.
+  it('espace les bulles d’au moins l’intervalle du registre', () => {
     let state = emptySpeech;
-    for (let i = 0; i < 5; i++) state = say(state, evenement, T0, config);
+    for (let i = 0; i < 5; i++) state = say(state, bavardage, T0, config);
 
-    let dites = 0;
-    for (let minute = 0; minute < 14; minute++) {
-      const result = pull(state, contexte({ nowMs: T0 + minute * 60_000 }), config);
+    const instants: number[] = [];
+    for (let seconde = 0; seconde < 600; seconde += 5) {
+      const result = pull(state, contexte({ nowMs: T0 + seconde * 1000 }), config);
       state = result.state;
-      if (result.speak !== null) dites += 1;
+      if (result.speak !== null) instants.push(seconde * 1000);
     }
 
-    expect(dites).toBe(1);
+    expect(instants.length).toBeGreaterThan(0);
+    for (let i = 1; i < instants.length; i += 1) {
+      const ecart = (instants[i] ?? 0) - (instants[i - 1] ?? 0);
+      expect(ecart).toBeGreaterThanOrEqual(config.minIntervalMs.bavardage);
+    }
   });
 });

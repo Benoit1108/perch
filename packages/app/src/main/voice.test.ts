@@ -52,24 +52,32 @@ describe('Voice', () => {
     expect(voice.pull({ focused: false, fullscreen: true })).toBeNull();
   });
 
-  it('n’enchaîne pas deux bulles dans le même quart d’heure', () => {
+  it('retient un bavardage juste après avoir parlé, puis le laisse sortir', () => {
     const clock = horloge();
     const voice = new Voice(() => 'fr', clock);
 
     voice.say({ key: 'speech.questDone', register: 'evenement' });
     voice.say({ key: 'speech.chatter', register: 'bavardage' });
 
-    expect(voice.pull(libre)).not.toBeNull();
-    clock.avance(60_000);
+    expect(voice.pull(libre)).toBe('Quête accomplie !');
+
+    clock.avance(10_000);
     expect(voice.pull(libre)).toBeNull();
 
-    // Le bavardage en attente est entre-temps devenu obsolète : une remarque d'il y a un
-    // quart d'heure n'a plus lieu d'être. Il faut une demande fraîche pour reparler.
-    clock.avance(defaultSpeechConfig.minIntervalMs);
-    expect(voice.pull(libre)).toBeNull();
+    clock.avance(defaultSpeechConfig.minIntervalMs.bavardage);
+    expect(voice.pull(libre)).toBe('Belle journée pour travailler.');
+  });
+
+  // Une remarque n'a de sens que sur le moment : celle d'il y a deux minutes commenterait
+  // une situation qui n'existe plus.
+  it('abandonne une demande devenue obsolète', () => {
+    const clock = horloge();
+    const voice = new Voice(() => 'fr', clock);
 
     voice.say({ key: 'speech.chatter', register: 'bavardage' });
-    expect(voice.pull(libre)).toBe('Belle journée pour travailler.');
+    clock.avance(defaultSpeechConfig.staleAfterMs + 1000);
+
+    expect(voice.pull(libre)).toBeNull();
   });
 
   it('fait passer un événement devant un bavardage', () => {

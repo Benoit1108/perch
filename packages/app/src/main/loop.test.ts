@@ -89,6 +89,40 @@ describe('startLoop — parole', () => {
   });
 });
 
+/**
+ * Le défaut rapporté sur un vrai usage : une bulle au démarrage, puis plus rien. Réduire
+ * une fenêtre, changer de bureau, faire un alt-tab — aucune réaction. Les situations
+ * étaient bien reconnues, mais un seuil de silence unique les retenait toutes jusqu'à
+ * péremption.
+ */
+describe('startLoop — réactions', () => {
+  it('réagit à une fenêtre qui disparaît', async () => {
+    const { sink, frames } = collector();
+    let fenetres: Rect[] = [
+      { x: 0, y: 100, width: 800, height: 600 },
+      { x: 900, y: 100, width: 800, height: 600 },
+    ];
+
+    const stop = startLoop({
+      overlay: sink,
+      sensors: { ...fakeSensors(null), windows: () => Promise.resolve(fenetres) },
+      debug: false,
+      voice: new Voice(() => 'fr', systemClock),
+      activity: fakeActivity(0),
+    });
+
+    await vi.advanceTimersByTimeAsync(3000);
+    const avant = frames.length;
+
+    fenetres = [{ x: 0, y: 100, width: 800, height: 600 }];
+    await vi.advanceTimersByTimeAsync(10_000);
+    stop();
+
+    const dites = frames.slice(avant).map((frame) => frame.bubble);
+    expect(dites).toContain('Et hop, une fenêtre en moins.');
+  });
+});
+
 describe('startLoop — inactivité', () => {
   it('endort le compagnon quand la source rapporte une longue inactivité', async () => {
     const { sink, frames } = collector();

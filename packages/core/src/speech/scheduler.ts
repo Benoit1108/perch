@@ -15,7 +15,7 @@ const PRIORITY = {
 } as const;
 
 /** Dérivé de la table : la liste et les priorités ne peuvent pas se contredire. */
-type SpeechRegister = keyof typeof PRIORITY;
+export type SpeechRegister = keyof typeof PRIORITY;
 
 export interface SpeechRequest {
   readonly key: MessageKey;
@@ -33,8 +33,18 @@ export interface SpeechContext {
 }
 
 export interface SpeechConfig {
-  /** Durée minimale entre deux bulles, tous registres confondus. */
-  readonly minIntervalMs: number;
+  /**
+   * Silence minimal avant de reparler, PAR REGISTRE.
+   *
+   * Un seuil unique ne pouvait pas convenir : réglé assez haut pour que le bavardage reste
+   * discret, il retenait aussi les réactions. Le compagnon disait alors une phrase au
+   * démarrage et plus rien — chaque alt-tab, chaque fenêtre réduite était mise en file,
+   * puis jetée pour cause de péremption avant d'avoir eu le droit d'être dite.
+   *
+   * Une montée de niveau doit sortir presque tout de suite ; une remarque de fond peut
+   * attendre.
+   */
+  readonly minIntervalMs: Readonly<Record<SpeechRegister, number>>;
   /** Taille maximale de la file. Au-delà, la moins prioritaire est écartée. */
   readonly maxQueue: number;
   /** Au-delà de cet âge, une demande n'a plus de sens et est abandonnée. */
@@ -42,11 +52,12 @@ export interface SpeechConfig {
 }
 
 export const defaultSpeechConfig: SpeechConfig = {
-  // Six minutes, et non quinze : à ce rythme-là le compagnon ne disait presque jamais
-  // rien, et tout le travail sur sa voix restait invisible. Les règles de silence — pendant
-  // la concentration, en plein écran — tiennent la promesse de l'invariant I6 bien mieux
-  // qu'un intervalle démesuré.
-  minIntervalMs: 6 * 60_000,
+  minIntervalMs: {
+    evenement: 5_000,
+    interaction: 15_000,
+    humeur: 45_000,
+    bavardage: 90_000,
+  },
   maxQueue: 3,
   staleAfterMs: 2 * 60_000,
 };
@@ -91,20 +102,24 @@ export function say(
 }
 
 /**
- * Décide s'il est permis de parler maintenant.
+ * Décide s'il est permis de dire CETTE demande maintenant.
  *
  * INVARIANT I6 — silence pendant la concentration et en plein écran. Le compagnon
  * n'interrompt pas ce que l'économie d'expérience récompense, et ne s'affiche pas
  * par-dessus une visioconférence.
+ *
+ * Le délai dépend du registre de la demande : il serait absurde de faire attendre une
+ * évolution le temps qu'on ferait patienter un bavardage.
  */
 export function canSpeak(
   state: SpeechState,
   context: SpeechContext,
-  config: SpeechConfig
+  config: SpeechConfig,
+  register: SpeechRegister
 ): boolean {
   if (context.focused || context.fullscreen) return false;
   if (state.lastSpokeAt === null) return true;
-  return context.nowMs - state.lastSpokeAt >= config.minIntervalMs;
+  return context.nowMs - state.lastSpokeAt >= config.minIntervalMs[register];
 }
 
 export interface SpeechPull {
@@ -122,12 +137,8 @@ export interface SpeechPull {
 export function pull(state: SpeechState, context: SpeechContext, config: SpeechConfig): SpeechPull {
   const fresh = state.queue.filter((pending) => context.nowMs - pending.at <= config.staleAfterMs);
 
-  if (!canSpeak(state, context, config)) {
-    return { state: { ...state, queue: fresh }, speak: null };
-  }
-
   const [next, ...rest] = fresh;
-  if (next === undefined) {
+  if (next === undefined || !canSpeak(state, context, config, next.register)) {
     return { state: { ...state, queue: fresh }, speak: null };
   }
 

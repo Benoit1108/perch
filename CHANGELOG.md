@@ -119,6 +119,12 @@ adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 
 ### Fixed
 
+- **Le compagnon disait une phrase au démarrage, puis plus rien.** Un seuil de silence
+  unique retenait aussi les réactions : chaque alt-tab, chaque fenêtre réduite partait en
+  file d'attente et y périmait avant d'avoir eu le droit d'être dite. Le délai dépend
+  maintenant du registre — une montée de niveau sort presque tout de suite, une remarque de
+  fond peut attendre.
+
 - **Le compagnon débordait des bords de l'écran**, coupé en deux. Deux causes : les
   panneaux du bureau se dessinent au-dessus de toute fenêtre — il faut donc se borner à la
   zone utile, pas à l'écran — et le bornage ne s'appliquait qu'au vol, alors qu'en marchant

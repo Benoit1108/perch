@@ -171,6 +171,10 @@ tenable : après un `parse`, le type est garanti à l'exécution.
   dans le dossier de l'utilisateur, puis dans `process.resourcesPath`, puis dans le dépôt.
   L'AppImage démarrait sans visage alors que ses images étaient deux dossiers plus loin.
 
+- **Le silence se règle PAR REGISTRE.** Un seuil unique ne peut pas convenir : assez haut
+  pour que le bavardage reste discret, il retient aussi les réactions, qui périment en file
+  avant d'être dites. Le compagnon paraît alors muet alors que tout fonctionne.
+
 ### Outillage
 
 - **TypeScript est épinglé en `~6.0.3`** : `typescript-eslint` exige `<6.1.0`. TS 7 existe
