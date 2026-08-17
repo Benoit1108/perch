@@ -17,9 +17,10 @@ import { nullSensors } from '../sensors/null.js';
 import type { Environment } from '../platform.js';
 import { currentEnvironment } from '../platform.js';
 import { boxDirectory } from '../exchange/box.js';
-import type { Locale, PerchState, Rect } from '@perch/core';
+import type { Locale, PerchState, Rect, StoragePort } from '@perch/core';
 import { boundingBox, defaultEarnConfig, progressFor, resolveLocale } from '@perch/core';
 
+import { adieu } from './adieu.js';
 import { bootstrap } from './bootstrap.js';
 import type { Companion } from './creature.js';
 import type { Exchange } from './exchange.js';
@@ -135,6 +136,40 @@ function announce(state: PerchState, packs: readonly DiscoveredPack[], sensorNam
   );
 }
 
+/**
+ * La fermeture, DIFFÉRÉE le temps d'une dernière écriture.
+ *
+ * Sans cela, la progression de la dernière minute pouvait ne jamais atterrir : le
+ * processus s'en allait au milieu du renommage atomique, laissant un fichier temporaire
+ * de plus dans le dossier de configuration.
+ */
+function wireShutdown(
+  storage: StoragePort,
+  progression: Progression,
+  overlay: Overlay,
+  stop: () => void
+): void {
+  app.on(
+    'will-quit',
+    adieu({
+      storage,
+      state: () => progression.current(),
+      arreter: () => {
+        stop();
+        progression.stop();
+      },
+      quitter: () => {
+        overlay.destroy();
+        app.quit();
+      },
+      // `unref` : ce délai ne doit pas maintenir le processus en vie à lui seul.
+      differer: (action, delai) => {
+        setTimeout(action, delai).unref();
+      },
+    })
+  );
+}
+
 async function main(): Promise<void> {
   // AVANT tout le reste, y compris le verrou d'instance unique : la relance doit partir
   // d'un processus qui n'a encore rien réservé.
@@ -214,13 +249,7 @@ async function main(): Promise<void> {
     isFocused: () => (progression.current().day?.focusMs ?? 0) >= defaultEarnConfig.focusAfterMs,
   });
 
-  app.on('will-quit', () => {
-    stop();
-    progression.stop();
-    overlay.destroy();
-    // Dernière écriture : sans elle, jusqu'à une minute d'expérience se perd à la fermeture.
-    void storage.write(progression.current());
-  });
+  wireShutdown(storage, progression, overlay, stop);
 
   announce(state, installed.registry.all(), sensors.name);
 }

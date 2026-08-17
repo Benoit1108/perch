@@ -7,6 +7,16 @@ adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **La dernière écriture de l'état est maintenant attendue avant la fermeture.** Lancée
+  sans qu'on l'attende, le processus s'en allait au milieu du renommage atomique : la
+  progression de la dernière minute pouvait ne jamais atterrir, et chaque fermeture
+  laissait un fichier temporaire de plus dans le dossier de configuration — vingt s'y
+  étaient accumulés sur une machine de test. La fermeture est différée le temps de
+  l'écriture, avec deux secondes de patience pour qu'un disque muet ne bloque jamais la
+  sortie.
+
 ### Added
 
 - **N'importe quelle créature comme compagnon.** La fenêtre de choix a un champ de
