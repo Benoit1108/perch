@@ -30,3 +30,6 @@ spike/node_modules/
 
 .DS_Store
 release/
+
+# Cache Python des scripts mainteneur.
+__pycache__/
