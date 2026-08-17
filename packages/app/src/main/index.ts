@@ -54,10 +54,29 @@ function claimSingleInstance(): boolean {
     app.exit(0);
     return false;
   }
-  app.on('second-instance', () => {
-    openSettings();
+  app.on('second-instance', (_event, argv) => {
+    ouvrirSurDemande(argv, true);
   });
   return true;
+}
+
+/**
+ * Ce qu'un lancement demande à l'instance en cours.
+ *
+ * L'overlay laisse passer TOUS les clics : il n'y a rien sur quoi cliquer pour ouvrir une
+ * fenêtre. Relancer l'application est donc le seul geste disponible une fois le compagnon
+ * en place — d'où ces deux drapeaux, qui valent aussi bien au démarrage qu'un mois plus tard.
+ *
+ * `defaut` distingue les deux appelants : un second lancement sans drapeau veut forcément
+ * quelque chose — sinon il n'aurait pas relancé — alors qu'un premier démarrage sans
+ * drapeau ne doit rien ouvrir du tout.
+ */
+function ouvrirSurDemande(argv: readonly string[], defaut: boolean): void {
+  if (argv.includes('--companion')) {
+    openChooser();
+    return;
+  }
+  if (defaut || argv.includes('--settings')) openSettings();
 }
 
 function reportRecovery(recovery: {
@@ -121,7 +140,7 @@ function wireSettings(
     box: createBox(exchange, progression, companion),
   });
 
-  if (process.argv.includes('--settings')) openSettings();
+  ouvrirSurDemande(process.argv, false);
 }
 
 function announce(state: PerchState, packs: readonly DiscoveredPack[], sensorName: string): void {

@@ -24,6 +24,10 @@ adhère au [versionnage sémantique](https://semver.org/lang/fr/).
   téléchargée dans son propre dossier. Le catalogue livré est du texte — 542 familles, 990
   stades, aucune image (invariant I5) —, et les sprites arrivent au moment du choix.
 
+- **Ouvrir directement le choix du compagnon** : `perch --companion`. L'overlay laisse
+  passer tous les clics, il n'y a rien sur quoi cliquer pour ouvrir une fenêtre — relancer
+  l'application est le seul geste disponible une fois le compagnon en place.
+
 - **Un pack de poros**, dessiné par `npm run pack:poro` : quatre stades animés — poro,
   moustache de Braum, grosse monture, Roi Poro — aux niveaux 1, 16, 36 et 60. Œuvre
   originale plutôt qu'images reprises, et fabriquée à la demande dans le dossier de
