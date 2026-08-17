@@ -26,6 +26,7 @@ import type { Exchange } from './exchange.js';
 import { createExchange } from './exchange.js';
 import { createBox } from './box.js';
 import { installEscapeHatches } from './escape-hatches.js';
+import { ensureX11 } from './ozone.js';
 import { survivePipeClosure } from './output.js';
 import { startLoop } from './loop.js';
 import type { Progression } from './progression.js';
@@ -135,6 +136,13 @@ function announce(state: PerchState, packs: readonly DiscoveredPack[], sensorNam
 }
 
 async function main(): Promise<void> {
+  // AVANT tout le reste, y compris le verrou d'instance unique : la relance doit partir
+  // d'un processus qui n'a encore rien réservé.
+  if (ensureX11(process.env, process.argv)) {
+    app.exit(0);
+    return;
+  }
+
   // UN seul dossier pour la configuration et pour l'état. Sans cela, Electron déduit le
   // chemin du nom de paquet npm et range l'état dans `@perch/app`, à côté d'un `perch`
   // qui contient déjà la configuration — deux dossiers pour une seule application, et un

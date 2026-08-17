@@ -34,10 +34,51 @@ const etapes = (ecran) => [
   ['coin-bas-droite', ecran.width - 1, ecran.height - 1],
 ];
 
+/**
+ * La bulle, le compagnon regardant a GAUCHE.
+ *
+ * Elle vit DANS le compagnon, qui se retourne par un `scaleX(-1)` : elle s'affichait donc
+ * a l'envers, texte en miroir.
+ */
+async function bulleAGauche(position, voix, overlay, frame) {
+  position.valeur = { x: 400, y: 540 };
+  await attendre(1500);
+  voix.say({ key: 'speech.newScene', register: 'evenement' });
+  await attendre(2500);
+
+  await writeFile(join(SORTIE, 'bulle-gauche.png'), (await overlay.capture()).toPNG());
+  const vue = frame();
+  console.log(
+    `VISUEL bulle-gauche      regard=${vue && vue.pet ? vue.pet.facing : '?'} ` +
+      `bulle=${vue ? JSON.stringify(vue.bubble) : '?'}`
+  );
+}
+
+/** Une etape : on place le curseur, on capture, on dit ce que ca donne. */
+async function etape(nom, x, y, position, overlay, frame, zone) {
+  position.valeur = { x, y };
+  await attendre(ATTENTE_MS);
+  await writeFile(join(SORTIE, `${nom}.png`), (await overlay.capture()).toPNG());
+
+  const vue = frame();
+  const pet = vue && vue.pet;
+  const bas = pet ? Math.round(pet.y) : -1;
+  const haut = bas - 96;
+  const entier = haut >= zone.y && bas <= zone.y + zone.height;
+
+  console.log(
+    `VISUEL ${nom.padEnd(18)} curseur=${String(x).padStart(4)},${String(y).padStart(4)} ` +
+      `compagnon=${String(pet ? Math.round(pet.x) : -1).padStart(4)},${String(bas).padStart(4)} ` +
+      `corps=[${haut}..${bas}] ${entier ? 'entier' : 'DEBORDE'}`
+  );
+}
+
 async function inspecter() {
   const { Overlay } = await import('../packages/app/dist/overlay/window.js');
   const { startLoop } = await import('../packages/app/dist/main/loop.js');
   const { createCompanion } = await import('../packages/app/dist/main/creature.js');
+  const { Voice } = await import('../packages/app/dist/main/voice.js');
+  const { systemClock } = await import('../packages/app/dist/adapters/clock.js');
   const { discoverPacksIn } = await import('../packages/app/dist/packs/discover.js');
 
   const ecran = ecrans.getPrimaryDisplay().bounds;
@@ -46,6 +87,7 @@ async function inspecter() {
 
   const position = { valeur: { x: 960, y: 540 } };
   const overlay = new Overlay();
+  const voix = new Voice(() => 'fr', systemClock);
   let derniere = null;
 
   const stop = startLoop({
@@ -65,6 +107,7 @@ async function inspecter() {
     },
     debug: false,
     workArea: () => zone,
+    voice: voix,
   });
 
   // La vraie creature, pas le marqueur de repli : c'est elle qu'il faut regarder.
@@ -81,23 +124,10 @@ async function inspecter() {
   await compagnon.show(1);
   await attendre(800);
 
+  await bulleAGauche(position, voix, overlay, () => derniere);
+
   for (const [nom, x, y] of etapes(ecran)) {
-    position.valeur = { x, y };
-    await attendre(ATTENTE_MS);
-
-    const image = await overlay.capture();
-    await writeFile(join(SORTIE, `${nom}.png`), image.toPNG());
-
-    const pet = derniere && derniere.pet;
-    const bas = pet ? Math.round(pet.y) : -1;
-    const haut = bas - 96;
-    const entier = haut >= zone.y && bas <= zone.y + zone.height;
-
-    console.log(
-      `VISUEL ${nom.padEnd(18)} curseur=${String(x).padStart(4)},${String(y).padStart(4)} ` +
-        `compagnon=${String(pet ? Math.round(pet.x) : -1).padStart(4)},${String(bas).padStart(4)} ` +
-        `corps=[${haut}..${bas}] ${entier ? 'entier' : 'DEBORDE'}`
-    );
+    await etape(nom, x, y, position, overlay, () => derniere, zone);
   }
 
   stop();

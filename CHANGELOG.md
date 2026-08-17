@@ -119,6 +119,12 @@ adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 
 ### Fixed
 
+- **L'application installée ne se comportait pas comme celle lancée en développement** :
+  collée à un seul bureau, derrière les fenêtres, visible seulement quand elle avait le
+  focus. Le paquet démarrait en client Wayland natif, où se placer et rester au-dessus sont
+  refusés en silence. Elle se relance désormais elle-même en client X11.
+- **La bulle s'affichait en miroir** quand le compagnon regardait à gauche.
+
 - **Le compagnon disait une phrase au démarrage, puis plus rien.** Un seuil de silence
   unique retenait aussi les réactions : chaque alt-tab, chaque fenêtre réduite partait en
   file d'attente et y périmait avant d'avoir eu le droit d'être dite. Le délai dépend

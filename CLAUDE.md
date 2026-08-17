@@ -162,6 +162,13 @@ tenable : après un `parse`, le type est garanti à l'exécution.
   Windows aux bords d'écran, et ce que l'extension GNOME apporte sur Linux.
 - **`--ozone-platform=x11` se choisit à l'exécution**, pas dans le script npm : il est
   indispensable sur Linux et dépourvu de sens ailleurs.
+- **`executableArgs` d'electron-builder N'ATTEINT PAS le lanceur de l'AppImage.** Vérifié
+  dans `/proc/<pid>/cmdline` : le binaire empaqueté démarrait sans le drapeau, donc en
+  client Wayland natif, où `setAlwaysOnTop` et `setVisibleOnAllWorkspaces` sont ignorés en
+  silence — compagnon collé à un seul bureau, derrière les fenêtres. L'application se
+  relance donc elle-même avec le bon drapeau (`main/ozone.ts`), avant tout le reste.
+- **La bulle vit DANS le compagnon**, qui se retourne par un `scaleX(-1)`. Sans contre-
+  miroir, son texte s'affiche à l'envers dès qu'il regarde à gauche.
 - **Une application lancée depuis un menu n'a personne au bout de sa sortie standard.**
   Le terminal parent se referme, le tube meurt, et le premier `console.log` lève `EPIPE` —
   qui, non attrapé, affiche la boîte « A JavaScript error occurred in the main process » et

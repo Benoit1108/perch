@@ -98,6 +98,13 @@ body {
   opacity: 1;
 }
 
+/* Le compagnon se retourne par un `scaleX(-1)` posé sur son conteneur — et la bulle, qui
+   vit dedans, se retrouvait ÉCRITE À L'ENVERS. On annule le miroir sur elle seule. Le
+   centrage tient toujours : le retournement du parent est symétrique autour du même axe. */
+#pet[data-regard='-1'] #bulle {
+  transform: translateX(-50%) scaleX(-1);
+}
+
 #pet[data-etat='sommeil'] #corps,
 #pet[data-etat='sommeil'] #repli {
   filter: saturate(0.5) brightness(0.8);

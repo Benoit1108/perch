@@ -159,6 +159,7 @@
       lisser(frame.pet.x - frame.origin.x, frame.pet.y - frame.origin.y);
       pet.style.transform = `translate3d(${vueX.toFixed(1)}px, ${vueY.toFixed(1)}px, 0) scaleX(${frame.pet.facing})`;
       pet.dataset.etat = frame.pet.state;
+      pet.dataset.regard = String(frame.pet.facing);
       animer(frame.pet.state, dt);
     }
 
