@@ -15,7 +15,7 @@
     "dbus-next": "^0.10.2"
   },
   "devDependencies": {
-    "electron": "^42.7.0"
+    "electron": "^42.9.2"
   },
   "desktopName": "perch"
 }
