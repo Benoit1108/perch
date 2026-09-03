@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@perch/core": "*",
-    "zod": "^4.4.3",
+    "zod": "^4.5.4",
     "dbus-next": "^0.10.2"
   },
   "devDependencies": {
